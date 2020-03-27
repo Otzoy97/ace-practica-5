@@ -1,4 +1,5 @@
-.include P5_M.asm
+.include stringH.asm
+.include fileH.asm
 .model small
 .386
 .stack
