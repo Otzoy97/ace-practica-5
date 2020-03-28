@@ -23,7 +23,7 @@ fileBuffer          db 255 dup(00h)
 fileBuffChar        db ?
 ;------------------------------------------------------------------
 ;CALCULADORA
-postFixOper         db 60 dup(00h)
+postFixOper         db 66 dup(00h)
 ;------------------------------------------------------------------
 ;ENCABEZADO DE REPORTE
 reportHeader        db "UNIVERSIDAD DE SAN CARLOS DE GUATEMALA", 0ah, 0dh
@@ -253,20 +253,21 @@ toPostFixed proc
         _verifyOperator:
             pop ax ;recupera el valor de la pila
             cmp al, '$'
-            je _returnDollarToStack ;es igual a '$', es el final de la pila
+            je _returnToStack ;es igual a '$', es el final de la pila
             prec fileBuffer[si], al ;determina la precedencia de los operandos
-            ja _stopWhilePopDollarNE ;el operando de filebuffer tiene menor 
+            ja _returnToStack ;el operando de filebuffer tiene mayor 
                                      ;precedencia al obtenido de la pila
             mov postFixOper[di], al ;almacena el operando en la cadena postfija
             inc di
+            ;mov postFixOper[di+1], '$'
+            ;printStrln postFixOper
+            ;mov postFixOper[di+1], 00h
             jmp _verifyOperator 
-        _returnDollarToStack:
-            xor ah, ah
-            mov al, '$'
-            push ax ;vuelve a meter el dolar en la pila
-        _stopWhilePopDollarNE:
-            xor ah, ah
+        _returnToStack:
+            push ax 
+            xor ax, ax
             mov al, fileBuffer[si]
+            ;printChar al
             push ax ;mete el operando a la pila
             inc si
             jmp _whileNotDollar ;regresa al proceso original
@@ -274,6 +275,7 @@ toPostFixed proc
         pop ax
         cmp al, '$'
         je _endPostFixed ;es igual al signo de dolar, llegó al final
+        ;printChar al
         mov postFixOper[di], al ;almacena el operando en la cadena postfija
         inc di
         jmp _whilePopTilDollar
