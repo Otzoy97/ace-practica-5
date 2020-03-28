@@ -70,6 +70,7 @@ calculatorMode proc
         call validateFileName
         jne _calculatorFileName
         openFile fileName, fileHandler
+        jc _calculatorFileName
         call readExpression
         jne _calculatorFileName
         printStrln fileBuffer
