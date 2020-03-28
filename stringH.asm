@@ -1,31 +1,38 @@
 ;IMPRIMIR TEXTO
 printStr MACRO charArray
+    PUSH AX
     MOV AH, 09H
     MOV DX, OFFSET charArray
     INT 21H
+    POP AX
 ENDM
 
 printStrln MACRO charArray
+    PUSH AX
     MOV AH, 09H
     MOV DX, OFFSET charArray
     INT 21H
-    ;IMRPIME UNA NUEVA LINEA
     MOV DX, 000AH
     MOV AH, 02H
     INT 21H
     MOV DX, 000DH
     INT 21H
+    POP AX
 ENDM
 
 printChar MACRO char
+    PUSH AX
     MOV AH, 02H
     XOR DX, DX
     MOV DL, char
     INT 21H
+    POP AX
 ENDM
 
 flushStr MACRO char_cte, size_cte, char
 LOCAL CLEAN
+    PUSH SI
+    PUSH CX
     XOR SI, SI
     XOR CX, CX
     MOV CX, size_cte
@@ -33,10 +40,14 @@ LOCAL CLEAN
         MOV char_cte[SI], char
         INC SI
         LOOP CLEAN
+    POP CX
+    POP SI
 ENDM
 
 getLine MACRO charArray
 LOCAL GETCHAR, EOS, ERASE
+    PUSH SI
+    PUSH AX
     XOR SI, SI
     GETCHAR:
         MOV AH, 01H
@@ -53,17 +64,21 @@ LOCAL GETCHAR, EOS, ERASE
         CMP SI, 00H             
         JE GETCHAR              ;SI, SI ES IGUAL A 0 REGRESARÁ A GETCHAR
         DEC SI                  ;DISMINUYE SI
-        MOV charArray[SI], 24H  ;MUEVE UN CARACTER DE FINAL DE STRING
         JMP GETCHAR
     EOS:
         MOV AL, 00H             ;NULL
         MOV charArray[SI], AL
+        POP AX
+        POP SI
 ENDM
 
 ; -- COMPARA UNA CADENA charAC DESDE LA POSICION
 ; -- from1 HASTA LA POSICION to1
 compareStr MACRO charAC, charAR
 LOCAL _1, _2, _3, _4, _5, _6, _7, _8, _9
+    PUSH SI
+    PUSH CX
+    PUSH AX
     XOR SI, SI
     XOR CX, CX
     MOV AL, 01H
@@ -104,10 +119,14 @@ LOCAL _1, _2, _3, _4, _5, _6, _7, _8, _9
         MOV AL, 00H
     _9:
         CMP AL, 01H
+        POP AX
+        POP CX
+        POP SI
 ENDM
 
 toLower MACRO charAC
 LOCAL _1, _2, _3, _4
+    PUSH SI
     XOR SI, SI
     _1:
         CMP charAC[SI], 24H ;ES IGUAL A '$'   
@@ -122,4 +141,5 @@ LOCAL _1, _2, _3, _4
         INC SI
         JMP _1
     _4:
+        POP SI
 ENDM
