@@ -1,12 +1,14 @@
 include stringH.asm
 include fileH.asm
 include screenH.asm
+include calc.asm
+
 .model small
 .386
 .stack
 .data
 ln                  db '$'
-fileNameHere        db "Ingrese el nombre del archivo de la forma (@@<ruta de archivo>@@):$"
+fileNameHere        db "Ingrese el nombre del archivo de la forma (##<ruta de archivo>##):$"
 createFileFailed    db "Error: no se pudo crear el archivo$"
 openFileFailed      db "Error: no se pudo abrir el archivo$"
 writeFileFailed     db "Error: no se pudo escribir el archivo$"
@@ -14,14 +16,14 @@ closeFileFailed     db "Error: No se pudo cerrar el archivo$"
 readFileFailed      db "Error: No se pudo leer el archivo$"
 illegalCharOnFile   db "Error: car", 0a0h,"cter inv",0a0h,"lido:   $" ;30
 illegalEndOnFile    db "Error: no hubo final de instrucción $"
-illegalNameFile     db "Error: nombre de archivo no coincide con formato @@<ruta de archivo>@@$"
-fileName            db 255 dup(00H)
+illegalNameFile     db "Error: nombre de archivo no coincide con formato ##<ruta de archivo>##$"
+fileName            db 255 dup(00h)
 fileHandler         dw ?
-fileBuffer          db 255 dup(00H)
+fileBuffer          db 255 dup(00h)
 fileBuffChar        db ?
 ;------------------------------------------------------------------
-;FORMATO DE FUNCIONES
-
+;CALCULADORA
+postFixOper         db 60 dup(00h)
 ;------------------------------------------------------------------
 ;ENCABEZADO DE REPORTE
 reportHeader        db "UNIVERSIDAD DE SAN CARLOS DE GUATEMALA", 0ah, 0dh
@@ -74,6 +76,7 @@ calculatorMode proc
         call readExpression
         jne _calculatorFileName
         printStrln fileBuffer
+        call toPostFixed
         ret
 calculatorMode endp
 
@@ -90,9 +93,9 @@ validateFileName proc
     xor si, si
     xor ax, ax
     _validateLoop:
-        cmp fileName[SI], 040h
+        cmp fileName[si], 23h
         je _validateLow
-        cmp fileName[SI], 00h
+        cmp fileName[si], 00h
         je _validateErr1
     _validateIncSi:
         inc si
@@ -137,7 +140,6 @@ validateFileName endp
 
 ;------------------------------------------------------------------
 readExpression proc
-;
 ; Utiliza el handle almacenado para recuperar una cadena que 
 ; representa una operación aritmética.
 ; Recupera el largo del archivo y a través de un loop lee hasta
@@ -225,5 +227,62 @@ readExpression proc
         ret
 readExpression endp
 
-
+;------------------------------------------------------------------
+toPostFixed proc
+; Utiliza el fileBuffer y pasa la expresion a números y a postfijo
+    push di
+    push si
+    push ax
+    xor di, di
+    xor si, si
+    xor ax, ax
+    mov al, '$'
+    push ax
+    _whileNotDollar:
+        cmp fileBuffer[si], 3bh
+        je _whilePopTilDollar ;si es igual a ';' se salta a whilePopTilDollar
+        cmp fileBuffer[si], '0'
+        jb _verifyOperator ;es menor a 0, debe ser un operador
+        cmp fileBuffer[si], '9'
+        ja _verifyOperator ;es mayor a 0, debe ser un operador
+        mov al, fileBuffer[si] 
+        mov postFixOper[di], al ;almacena el numero en la cadena postfija
+        inc di
+        inc si 
+        jmp _whileNotDollar
+        _verifyOperator:
+            pop ax ;recupera el valor de la pila
+            cmp al, '$'
+            je _returnDollarToStack ;es igual a '$', es el final de la pila
+            prec fileBuffer[si], al ;determina la precedencia de los operandos
+            ja _stopWhilePopDollarNE ;el operando de filebuffer tiene menor 
+                                     ;precedencia al obtenido de la pila
+            mov postFixOper[di], al ;almacena el operando en la cadena postfija
+            inc di
+            jmp _verifyOperator 
+        _returnDollarToStack:
+            xor ah, ah
+            mov al, '$'
+            push ax ;vuelve a meter el dolar en la pila
+        _stopWhilePopDollarNE:
+            xor ah, ah
+            mov al, fileBuffer[si]
+            push ax ;mete el operando a la pila
+            inc si
+            jmp _whileNotDollar ;regresa al proceso original
+    _whilePopTilDollar:
+        pop ax
+        cmp al, '$'
+        je _endPostFixed ;es igual al signo de dolar, llegó al final
+        mov postFixOper[di], al ;almacena el operando en la cadena postfija
+        inc di
+        jmp _whilePopTilDollar
+    _endPostFixed:
+        mov postFixOper[di+1], '$'
+        printStrln postFixOper
+        pop ax
+        pop si
+        pop di
+        ret
+toPostFixed endp
 end main
