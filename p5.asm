@@ -5,6 +5,7 @@ include screenH.asm
 .386
 .stack
 .data
+ln                  db '$'
 fileNameHere        db "Ingrese el nombre del archivo de la forma (@@<ruta de archivo>@@):$"
 createFileFailed    db "Error: no se pudo crear el archivo$"
 openFileFailed      db "Error: no se pudo abrir el archivo$"
@@ -48,6 +49,7 @@ fxIntegral          db "F(x) = ", 0ah, 0dh
 main proc
     mov ax, @data
     mov ds, ax
+    clearScreen
     ;flushStr fileName, 255, 00H
     ;getLine fileName
     ;call validateFileName
@@ -67,10 +69,10 @@ calculatorMode proc
         getLine fileName
         call validateFileName
         jne _calculatorFileName
+        openFile fileName, fileHandler
         call readExpression
         jne _calculatorFileName
         printStrln fileBuffer
-        ;clearScreen
         ret
 calculatorMode endp
 
@@ -86,7 +88,6 @@ validateFileName proc
     xor cx, cx
     xor si, si
     xor ax, ax
-    mov cx, 0ffh
     _validateLoop:
         cmp fileName[SI], 040h
         je _validateLow
@@ -94,26 +95,39 @@ validateFileName proc
         je _validateErr1
     _validateIncSi:
         inc si
-        loop _validateLoop
+        jmp _validateLoop
     _validateErr1:
         printStrln illegalNameFile
+        printStrln ln
         mov al, 00h
         cmp al, 01h
-        jmp _validateEnd
+        jmp _validateEnd1
     _validateLow:
         cmp al, 02h
         je _validateHigh
         inc al
         jmp _validateIncSi
     _validateHigh:
-        cmp ah, 02h
-        je _validateSuc
+        cmp ah, 01h
+        je _validateEnd
         inc ah
         jmp _validateIncSi
-    _validateSuc:
-        mov al, 01h
-        cmp al, 01h
     _validateEnd:
+        mov fileName[si], 00h
+        mov fileName[si - 1], 00h
+        mov cx, si
+        xor si, si
+        dec cx
+    _validateEndLoop:
+        mov al, fileName[si + 2]
+        mov fileName[si], al
+        inc si
+        loop _validateEndLoop
+        mov al, 00h
+        cmp al, 00h
+        ;mov fileName[si + 1], '$'
+        ;printStrln fileName
+    _validateEnd1:
         pop ax
         pop si
         pop cx
@@ -180,18 +194,29 @@ readExpression proc
         jmp _readErr3
     _readErr1:
         printStrln readFileFailed
+        printStrln ln
+        mov al, 01h
+        cmp al, 00h
         JMP _readEndP
     _readErr2:
         mov illegalCharOnFile[1eh], al
         printStrln illegalCharOnFile
+        printStrln ln
+        mov al, 01h
+        cmp al, 00h
         JMP _readEndP
     _readErr3:
         printStrln illegalEndOnFile
+        printStrln ln
+        mov al, 01h
+        cmp al, 00h
         JMP _readEndP
     _readSucc:
         mov fileBuffer[di], al
-        ;mov fileBuffer[di+1], '$' <-> para debuggear
-        ;printStrln fileBuffer <-> para debuggear
+        mov fileBuffer[di+1], '$' ; <-> para debuggear
+        ;printStrln fileBuffer ;<-> para debuggear
+        mov al, 00h
+        cmp al, 00h
     _readEndP:
         pop di
         pop cx
