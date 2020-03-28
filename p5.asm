@@ -1,34 +1,124 @@
 include stringH.asm
 include fileH.asm
+include screenH.asm
 .model small
 .386
 .stack
 .data
-createFileFailed    db "-- Error: no se pudo crear el archivo --$"
-openFileFailed      db "-- Error: no se pudo abrir el archivo --$"
-writeFileFailed     db "-- Error: no se pudo escribir el archivo --$"
-closeFileFailed     db "-- Error: No se pudo cerrar el archivo --$"
-readFileFailed      db "-- Error: No se pudo leer el archivo --$"
-illegalCharOnFile   db "-- Error: car", 0a0h,"cter inv",0a0h,"lido:   --$" ;30
-illegalEndOnFile    db "-- Error: no hubo final de instrucción --$"
+fileNameHere        db "Ingrese el nombre del archivo de la forma (@@<ruta de archivo>@@):$"
+createFileFailed    db "Error: no se pudo crear el archivo$"
+openFileFailed      db "Error: no se pudo abrir el archivo$"
+writeFileFailed     db "Error: no se pudo escribir el archivo$"
+closeFileFailed     db "Error: No se pudo cerrar el archivo$"
+readFileFailed      db "Error: No se pudo leer el archivo$"
+illegalCharOnFile   db "Error: car", 0a0h,"cter inv",0a0h,"lido:   $" ;30
+illegalEndOnFile    db "Error: no hubo final de instrucción $"
+illegalNameFile     db "Error: nombre de archivo no coincide con formato @@<ruta de archivo>@@$"
 fileName            db 255 dup(00H)
 fileHandler         dw ?
 fileBuffer          db 255 dup(00H)
 fileBuffChar        db ?
+;------------------------------------------------------------------
+;FORMATO DE FUNCIONES
+
+;------------------------------------------------------------------
+;ENCABEZADO DE REPORTE
+reportHeader        db "UNIVERSIDAD DE SAN CARLOS DE GUATEMALA", 0ah, 0dh
+                    db "FACULTAD DE INGENIERIA", 0ah, 0dh
+                    db "ESCUELA DE CIENCIAS Y SISTEMAS", 0ah, 0dh
+                    db "ARQUITECTURA DE COMPUTADORES Y ENSAMBLADORES 1 A", 0ah, 0dh
+                    db "PRIMER SEMESTRE 2020", 0ah, 0dh
+                    db "SERGIO FERNANDO OTZOY GONZALEZ", 0ah, 0dh
+                    db "201602782", 0ah, 0dh, 0ah, 0dh
+                    db "REPORTE PRACTICA NO. 3",  0ah, 0dh, 0ah, 0dh
+reportDate          db "Fecha: 00/00/0000", 0ah, 0dh
+reportTime          db "Hora: 00:00:00", 0ah, 0dh, 0ah, 0dh
+reportOriginal      db "Función original", 0ah, 0dh
+reportDerivada      db "Función derivada", 0ah, 0dh
+reportIntegral      db "Función integral", 0ah, 0dh
+fxOriginal          db "f(x) = ", 0ah, 0dh
+fxDerivada          db "f'(x) = ", 0ah, 0dh
+fxIntegral          db "F(x) = ", 0ah, 0dh
+;x1                  db "x"
+;x2                  db "x2"
+;x3                  db "x3"
+;x4                  db "x4"
+
 .code
 main proc
     mov ax, @data
     mov ds, ax
-    flushStr fileName, 255, 00H
-    getLine fileName
-    openFile fileName, fileHandler   
-    jc EndMain
-    call readExpression
+    ;flushStr fileName, 255, 00H
+    ;getLine fileName
+    ;call validateFileName
+    ;openFile fileName, fileHandler   
+    ;jc EndMain
+    call calculatorMode
     ;printStrln fileBuffer
     EndMain:
         mov ax, 4C00H
         int 21H
 main endp
+
+calculatorMode proc
+    _calculatorFileName:
+        printStrln fileNameHere
+        flushStr fileName, 255, 00H
+        getLine fileName
+        call validateFileName
+        jne _calculatorFileName
+        call readExpression
+        jne _calculatorFileName
+        printStrln fileBuffer
+        ;clearScreen
+        ret
+calculatorMode endp
+
+;------------------------------------------------------------------
+validateFileName proc
+; Valida que el nombre del archivo este en este formato ## ##
+; Recorre el nombre del archivo hasta encontrar el codigo ascii
+; de caracter nulo
+;------------------------------------------------------------------
+    push cx
+    push si
+    push ax
+    xor cx, cx
+    xor si, si
+    xor ax, ax
+    mov cx, 0ffh
+    _validateLoop:
+        cmp fileName[SI], 040h
+        je _validateLow
+        cmp fileName[SI], 00h
+        je _validateErr1
+    _validateIncSi:
+        inc si
+        loop _validateLoop
+    _validateErr1:
+        printStrln illegalNameFile
+        mov al, 00h
+        cmp al, 01h
+        jmp _validateEnd
+    _validateLow:
+        cmp al, 02h
+        je _validateHigh
+        inc al
+        jmp _validateIncSi
+    _validateHigh:
+        cmp ah, 02h
+        je _validateSuc
+        inc ah
+        jmp _validateIncSi
+    _validateSuc:
+        mov al, 01h
+        cmp al, 01h
+    _validateEnd:
+        pop ax
+        pop si
+        pop cx
+        ret
+validateFileName endp
 
 ;------------------------------------------------------------------
 readExpression proc
@@ -41,6 +131,7 @@ readExpression proc
 ; (caracter válidos: + - * / 0 1 2 3 4 5 6 7 8 9) se detendrá el 
 ; procedimiento y se mostrará un error mostrando el caracter
 ; inválido, la fila y la columna.
+;------------------------------------------------------------------
     push ax ;almacena el valor previo de ax
     push cx ;almacena el valor previo de cx
     push di ;almacena el valor previos de di
