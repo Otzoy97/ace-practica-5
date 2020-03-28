@@ -1,41 +1,84 @@
-createFile MACRO fileName
+createFile MACRO fileName, fileHandler
+LOCAL _1, _2
+    PUSH AX
+    PUSH CX
     MOV AH, 3CH
     MOV CX, 00H
     MOV DX, OFFSET fileName
     INT 21H
+    JNC _1
+    printStrln createFileFailed
+    JMP _2
+    _1:
+    MOV fileHandler, AX
+    _2:
+    POP CX
+    POP AX
 ENDM
 
 writeFile MACRO fileHandler, fileContent, fileSize
+LOCAL _1
+    PUSH AH
+    PUSH CX
+    PUSH BX
     MOV AH, 40H
     MOV BX, fileHandler
     MOV CX, fileSize
     MOV DX, OFFSET fileContent
     INT 21H
+    JNC _1
+    printStrln writeFileFailed
+    _1
+    POP BX
+    POP CX
+    POP AH
 ENDM
 
 openFile MACRO  fileName, fileHandler
+LOCAL _1, _2
+    PUSH AX
     MOV AH, 3DH
     MOV AL, 02H
     MOV DX, OFFSET fileName
     INT 21H
-    ;ESPECIFICAR ERROR
+    JNC _1
+    printStrln openFileFailed
+    JMP _2
+    _1:
+    MOV fileHandler, AX
+    _2:
+    POP AX
 ENDM
 
 closeFile MACRO fileHandler
 LOCAL _1
+    PUSH AX
+    PUSH BX
     MOV AH, 3EH
     MOV BX, fileHandler
     INT 21H
     JNC _1
-    printStrln fileEr3
+    printStrln closeFileFailed
     _1:
+    POP BX
+    POP AX
 ENDM
 
 readFile MACRO fileHandler, fileContent, fileSize
+LOCAL _1
+    PUSH AX
+    PUSH BX
+    PUSH CX
     MOV AH, 3FH
     MOV BX, fileHandler
     MOV CX, fileSize
     MOV DX, OFFSET fileContent
     INT 21H
-    ;ESPECIFICAR ERROR
+    JNC _1
+    printStrln readFileFailed
+    _1:
+    POP CX
+    POP BX
+    POP AX
 ENDM
+
