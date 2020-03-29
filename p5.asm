@@ -8,13 +8,14 @@ include calc.asm
 .stack
 .data
 ln                  db '$'
+pressanykey         db "Presione cualquier tecla para continuar...$"
 fileNameHere        db "Ingrese el nombre del archivo de la forma (##<ruta de archivo>##):$"
 createFileFailed    db "Error: no se pudo crear el archivo$"
 openFileFailed      db "Error: no se pudo abrir el archivo$"
 writeFileFailed     db "Error: no se pudo escribir el archivo$"
 closeFileFailed     db "Error: No se pudo cerrar el archivo$"
 readFileFailed      db "Error: No se pudo leer el archivo$"
-illegalCharOnFile   db "Error: car", 0a0h,"cter inv",0a0h,"lido:   $" ;30
+illegalCharOnFile   db "Error: caracter inv",0a0h,"lido: $" ;30
 illegalEndOnFile    db "Error: no hubo final de instrucci", 0a2h ,"n $"
 illegalNameFile     db "Error: nombre de archivo no coincide con formato ##<ruta de archivo>##$"
 fileName            db 255 dup(00h)
@@ -54,15 +55,22 @@ fxIntegral          db "F(x) = ", 0ah, 0dh
 main proc
     mov ax, @data
     mov ds, ax
-    clearScreen
     call calculatorMode
     EndMain:
         mov ax, 4C00H
         int 21H
 main endp
 
+;------------------------------------------------------------------
 calculatorMode proc
+; solicita al usuario la entrada de una ruta de archivo verifica que 
+; la ruta esté en el formato correcto
+; lee el archivo y verifica que no tenga ningún caracter inválido
+; arregla la operación leída (infija) a notación postfija
+; opera la operación postfija utilizando la pila
+;------------------------------------------------------------------
     _calculatorFileName:
+        clearScreen
         printStrln fileNameHere
         flushStr fileName, 255, 00H
         getLine fileName
@@ -84,6 +92,7 @@ calculatorMode proc
         printChar 0c0h
         printCharTimes 0c4h, 4eh
         printStrln ln
+        pauseAnyKey
         ret
 calculatorMode endp
 
@@ -110,6 +119,7 @@ validateFileName proc
     _validateErr1:
         printStrln illegalNameFile
         printStrln ln
+        pauseAnyKey
         mov al, 00h
         cmp al, 01h
         jmp _validateEnd1
@@ -205,19 +215,23 @@ readExpression proc
     _readErr1:
         printStrln readFileFailed
         printStrln ln
+        pauseAnyKey
         mov al, 01h
         cmp al, 00h
         JMP _readEndP
     _readErr2:
-        mov illegalCharOnFile[1eh], al
-        printStrln illegalCharOnFile
+        printStr illegalCharOnFile
+        printChar fileBuffChar
         printStrln ln
+        printStrln ln
+        pauseAnyKey
         mov al, 01h
         cmp al, 00h
         JMP _readEndP
     _readErr3:
         printStrln illegalEndOnFile
         printStrln ln
+        pauseAnyKey
         mov al, 01h
         cmp al, 00h
         JMP _readEndP
@@ -228,6 +242,7 @@ readExpression proc
         mov al, 00h
         cmp al, 00h
     _readEndP:
+        closeFile fileHandler
         pop di
         pop cx
         pop ax            
@@ -236,7 +251,8 @@ readExpression endp
 
 ;------------------------------------------------------------------
 toPostFixed proc
-; Utiliza el fileBuffer y pasa la expresion a números y a postfijo
+; Utiliza el fileBuffer y pasa la expresion infija a postfijo
+;------------------------------------------------------------------
     push di
     push si
     push ax
@@ -304,6 +320,7 @@ calculateExpression proc
 ; Luego desapila el resultado y lo convierte a decimal, apilando
 ; cada digito (el tope de la pila sería el digito más significativo)
 ; Al finalizar desapila cada número, suma '0' e imprime el ascii
+;------------------------------------------------------------------
     push si
     push ax
     push cx
@@ -409,6 +426,7 @@ calculateExpression proc
         jmp _calcTillSemiColon ;sigue con la operación
     _caclErrDiv0:
         printStrln operDiviZero
+        pauseAnyKey
         jmp _calcEnd
     _calcShowResult:
         pop eax ;digito a acumulador
