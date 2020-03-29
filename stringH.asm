@@ -29,6 +29,20 @@ printChar MACRO char
     POP AX
 ENDM
 
+printCharTimes MACRO char, cte
+LOCAL _1
+    PUSH AX
+    XOR CX, CX
+    MOV CX, cte
+    MOV AH, 02H
+    XOR DX, DX
+    MOV DL, char
+    _1:
+        INT 21H
+        LOOP _1
+    POP AX
+ENDM
+
 flushStr MACRO char_cte, size_cte, char
 LOCAL CLEAN
     PUSH SI
