@@ -25,9 +25,12 @@ fileBuffChar        db ?
 ;CALCULADORA
 postFixOper         db 66 dup(00h)
 tempOper            dd 0
-operOverflow        db "Error: desbordamiento en multiplicaci", 0a2h, "n$"
-operDiviZero        db "Error: divisi", 0a2h, "n ilegal entre cero$"
-operSuccess         db "Resultado de operaci", 0a2h, "n: $"
+operOverflow        db 0b3h," Error: desbordamiento en multiplicaci", 0a2h, "n$"
+operDiviZero        db 0b3h," Error: divisi", 0a2h, "n ilegal entre cero$"
+operInfo            db 0b3h," Operaci", 0a2h, "n:$"
+operInfo2           db 0b3h,"  $"
+operInfoSucc        db 0b3h," Resultado:$"
+
 ;------------------------------------------------------------------
 ;ENCABEZADO DE REPORTE
 reportHeader        db "UNIVERSIDAD DE SAN CARLOS DE GUATEMALA", 0ah, 0dh
@@ -63,14 +66,24 @@ calculatorMode proc
         printStrln fileNameHere
         flushStr fileName, 255, 00H
         getLine fileName
-        call validateFileName
+        call validateFileName ;verifica que la ruta del archivo este rodeada de ##
         jne _calculatorFileName
-        openFile fileName, fileHandler
-        jc _calculatorFileName
-        call readExpression
+        openFile fileName, fileHandler ;abre el archivo y obtiene el handler
+        jc _calculatorFileName 
+        call readExpression ;lee y valida la expresión alojada en el archivo
         jne _calculatorFileName
-        printStrln fileBuffer
-        call toPostFixed
+        call toPostFixed ;compone la expresión a notación infija
+        clearScreen 
+        printChar 0dah
+        printCharTimes 0c4h, 4eh
+        printStrln ln
+        printStrln operInfo 
+        printStr operInfo2 
+        printStrln fileBuffer ;imprime el expresión leída
+        call calculateExpression
+        printChar 0c0h
+        printCharTimes 0c4h, 4eh
+        printStrln ln
         ret
 calculatorMode endp
 
@@ -307,7 +320,7 @@ calculateExpression proc
         cmp postFixOper[si], '-'
         je _calcSub
         cmp postFixOper[si], '*'
-        je _caclMul
+        je _calcMul
         cmp postFixOper[si], '/'
         je _calcDiv
     _toBinaryUnit:
@@ -373,9 +386,12 @@ calculateExpression proc
         push eax ;lo vuelve a meter
         shl eax, 01h ;mueve hacia la izq 1 bit -> eax ya no es igual
         pop eax ;vuelve a recupera el valor a eax
-        jnc _calcLoopToAscii ;no hay carry -> flujo usual
+        jnc _calcToAscii1 ;no hay carry -> flujo usual
         mov fileBuffChar, '-' ;almacena el signo menos
         neg eax ;obtiene el complemento a dos
+        _calcToAscii1:
+            xor ebx, ebx
+            mov bl, 0ah
         _calcLoopToAscii:
             cdq
             div ebx      ;divide dentro de 10
@@ -384,21 +400,24 @@ calculateExpression proc
             xor edx, edx ;limpia dato
             cmp eax, 00000000h ;eax debe ser igual a 0 para saltar a mostrar el resultado
             jne _calcLoopToAscii
+            printStrln operInfoSucc
+            printStr operInfo2
+            printChar fileBuffChar
             jmp _calcShowResult
     _calcErrOverflow:
         printStrln operOverflow
         jmp _calcTillSemiColon ;sigue con la operación
     _caclErrDiv0:
         printStrln operDiviZero
-        jmp caclEnd
-    _calcShowResult
-        printChar fileBuffChar
+        jmp _calcEnd
+    _calcShowResult:
         pop eax ;digito a acumulador
         add al, '0' ;a ascii
         mov bl, al
         printChar bl ;imprime el caracter
         loop _calcShowResult
-    _caclEnd:
+        printStrln ln
+    _calcEnd:
         pop bx
         pop cx
         pop ax
