@@ -8,6 +8,7 @@ LOCAL _1, _2
     INT 21H
     JNC _1
     printStrln createFileFailed
+    pauseAnyKey
     JMP _2
     _1:
     MOV fileHandler, AX
@@ -28,6 +29,7 @@ LOCAL _1
     INT 21H
     JNC _1
     printStrln writeFileFailed
+    pauseAnyKey
     _1
     POP BX
     POP CX
@@ -43,6 +45,7 @@ LOCAL _1, _2
     INT 21H
     JNC _1
     printStrln openFileFailed
+    pauseAnyKey
     JMP _2
     _1:
     MOV fileHandler, AX
@@ -76,6 +79,7 @@ LOCAL _1
     INT 21H
     JNC _1
     printStrln readFileFailed
+    pauseAnyKey
     _1:
     POP CX
     POP BX
