@@ -15,7 +15,7 @@ writeFileFailed     db "Error: no se pudo escribir el archivo$"
 closeFileFailed     db "Error: No se pudo cerrar el archivo$"
 readFileFailed      db "Error: No se pudo leer el archivo$"
 illegalCharOnFile   db "Error: car", 0a0h,"cter inv",0a0h,"lido:   $" ;30
-illegalEndOnFile    db "Error: no hubo final de instrucción $"
+illegalEndOnFile    db "Error: no hubo final de instrucci", 0a2h ,"n $"
 illegalNameFile     db "Error: nombre de archivo no coincide con formato ##<ruta de archivo>##$"
 fileName            db 255 dup(00h)
 fileHandler         dw ?
@@ -24,6 +24,10 @@ fileBuffChar        db ?
 ;------------------------------------------------------------------
 ;CALCULADORA
 postFixOper         db 66 dup(00h)
+tempOper            dd 0
+operOverflow        db "Error: desbordamiento en multiplicaci", 0a2h, "n$"
+operDiviZero        db "Error: divisi", 0a2h, "n ilegal entre cero$"
+operSuccess         db "Resultado de operaci", 0a2h, "n: $"
 ;------------------------------------------------------------------
 ;ENCABEZADO DE REPORTE
 reportHeader        db "UNIVERSIDAD DE SAN CARLOS DE GUATEMALA", 0ah, 0dh
@@ -42,23 +46,13 @@ reportIntegral      db "Función integral", 0ah, 0dh
 fxOriginal          db "f(x) = ", 0ah, 0dh
 fxDerivada          db "f'(x) = ", 0ah, 0dh
 fxIntegral          db "F(x) = ", 0ah, 0dh
-;x1                  db "x"
-;x2                  db "x2"
-;x3                  db "x3"
-;x4                  db "x4"
 
 .code
 main proc
     mov ax, @data
     mov ds, ax
     clearScreen
-    ;flushStr fileName, 255, 00H
-    ;getLine fileName
-    ;call validateFileName
-    ;openFile fileName, fileHandler   
-    ;jc EndMain
     call calculatorMode
-    ;printStrln fileBuffer
     EndMain:
         mov ax, 4C00H
         int 21H
@@ -280,11 +274,135 @@ toPostFixed proc
         inc di
         jmp _whilePopTilDollar
     _endPostFixed:
-        mov postFixOper[di+1], '$'
-        printStrln postFixOper
+        mov postFixOper[di+1], 3bh ;mueve el simbolo ; para especificar el final de la cadena
+        ;printStrln postFixOper
         pop ax
         pop si
         pop di
         ret
 toPostFixed endp
+
+;------------------------------------------------------------------
+calculateExpression proc
+; Recorre el arreglo postfijo, recupera el número que representa el
+; código ascii y lo apila. 
+; Al encontrar un operando, desapila dos números y vuelve a apilar
+; el resultado
+; Luego desapila el resultado y lo convierte a decimal, apilando
+; cada digito (el tope de la pila sería el digito más significativo)
+; Al finalizar desapila cada número, suma '0' e imprime el ascii
+    push si
+    push ax
+    push cx
+    push bx
+    xor si, si
+    xor ax, ax
+    xor bx, bx
+    xor cx, cx
+    _calcTillSemiColon:
+        cmp postFixOper[si], 3bh 
+        je _calcToAscii
+        cmp postFixOper[si], '+'
+        je _calcAdd
+        cmp postFixOper[si], '-'
+        je _calcSub
+        cmp postFixOper[si], '*'
+        je _caclMul
+        cmp postFixOper[si], '/'
+        je _calcDiv
+    _toBinaryUnit:
+        xor eax, eax
+        xor ebx, ebx
+        cmp cx, 0001h 
+        je _toBinaryDec ;ya hay un numero, debe ser decimal
+        mov al, postFixOper[si] 
+        sub al, '0' ;recupera el número "real"
+        mov tempOper, eax ;lo almacena para un posterior uso
+        inc cx
+        inc si
+        jmp _calcTillSemiColon
+    _toBinaryDec:
+        xor eax, eax
+        xor ebx, ebx
+        mov eax, tempOper ;recupera el número
+        mov ebx, 0ah 
+        mul ebx ;lo multiplica pro 10
+        mov bl, postFixOper[si]
+        sub bl, '0' ;recupera el número "real"
+        add eax, ebx ;suma el decena con la unidad
+        push eax ;apila el numero
+        xor cx, cx ;reinicia el contador
+        inc si
+        jmp _calcTillSemiColon
+    _calcAdd:
+        pop ebx ;segundo operando
+        pop eax ;primer operando
+        add eax, ebx ;opera la suma
+        push eax ;guarda el resultado
+        inc si
+        jmp _calcTillSemiColon
+    _calcSub:
+        pop ebx ;segundo operando
+        pop eax ;primer operando
+        sub eax, ebx ;opera la resta
+        push eax ;guarda el resultado
+        inc si
+        jmp _calcTillSemiColon
+    _calcMul:
+        pop ebx ;segundo operando
+        pop eax ;primer operando
+        imul ebx ;opera el producto
+        push eax ;guarda el resultado
+        inc si
+        jo _calcErrOverflow ;hubo un desbordamiento
+        jmp _calcTillSemiColon
+    _calcDiv:
+        pop ebx ;segundo operando
+        pop eax ;primer operando
+        cdq
+        cmp ebx, 00h
+        je _caclErrDiv0 ;division indefinida
+        idiv ebx ;opera la división
+        push eax ;guarda el resultado
+        inc si
+        jmp _calcTillSemiColon
+    _calcToAscii:
+        mov fileBuffChar, 00h ;almacena un null
+        xor cx, cx ;limpia el conteo
+        pop eax ;recupera el valor
+        push eax ;lo vuelve a meter
+        shl eax, 01h ;mueve hacia la izq 1 bit -> eax ya no es igual
+        pop eax ;vuelve a recupera el valor a eax
+        jnc _calcLoopToAscii ;no hay carry -> flujo usual
+        mov fileBuffChar, '-' ;almacena el signo menos
+        neg eax ;obtiene el complemento a dos
+        _calcLoopToAscii:
+            cdq
+            div ebx      ;divide dentro de 10
+            push edx     ;almacena el residuo
+            inc cx
+            xor edx, edx ;limpia dato
+            cmp eax, 00000000h ;eax debe ser igual a 0 para saltar a mostrar el resultado
+            jne _calcLoopToAscii
+            jmp _calcShowResult
+    _calcErrOverflow:
+        printStrln operOverflow
+        jmp _calcTillSemiColon ;sigue con la operación
+    _caclErrDiv0:
+        printStrln operDiviZero
+        jmp caclEnd
+    _calcShowResult
+        printChar fileBuffChar
+        pop eax ;digito a acumulador
+        add al, '0' ;a ascii
+        mov bl, al
+        printChar bl ;imprime el caracter
+        loop _calcShowResult
+    _caclEnd:
+        pop bx
+        pop cx
+        pop ax
+        pop si
+    ret
+calculateExpression endp
 end main
