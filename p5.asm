@@ -58,10 +58,11 @@ funcxInst           db "Ingrese coeficiente por coeficiente (ej: -4, 0, +2): $"
 funcfX              db "- Coeficiente de x4: $" ;18
 funcfXWrong         db "Coeficiente inv", 0a0h,"lido: $"
 funcNoMem           db "No hay ninguna funci", 0a2h, "n en memoria$"
-funcIsMem           db 0b3h, " Función en memoria:$"
-funcOnMemf          db 5 (00h)
-funcOnMemd          db 5 (00h)
-funcOnMemi          dd 5 (00h)
+funcIsMem           db 0b3h, " Funci", 0a2h ,"n en memoria:$"
+funcOnMemf          db 5 dup(00h)
+funcOnMemd          db 5 dup(00h)
+funcOnMemi          dd 5 dup(00h)
+funcThereIsF        db 0
 funcOriginal        db " f(x) = $"
 funcDerivada        db " f'(x) = $"
 functegral          db " F(x) = $"
@@ -130,7 +131,7 @@ main proc
         call enterFunction
     mainShowFunction:
         clearScreen
-        call functionExist
+        cmp funcThereIsF, 00h
         jz mainGetUserOp
         call showFunction
         jmp mainGetUserOp
@@ -153,32 +154,6 @@ main proc
         mov ax, 4C00H
         int 21H
 main endp
-
-;------------------------------------------------------------------
-functionExist proc
-; Vrifica que exista una función en memoria
-; suma el contenido de funcOnMemf, si es igual a 0, entonces
-; no hay función
-    push ax
-    push cx
-    push si
-    mov cx, 0005h
-    _functionAddUp:
-        add al, funcOnMemf[si]
-        inc si
-        loop _functionAddUp
-    cmp al, 00H
-    jz _functionJZ
-    jmp _functionExistEnd
-    _functionJZ:
-        printStrln funcxDExist
-        pauseAnyKey
-    _functionExistEnd:
-        pop si
-        pop cx
-        pop ax
-        ret
-functionExist endp
 
 ;------------------------------------------------------------------
 enterFunction proc
@@ -248,6 +223,7 @@ enterFunction proc
             pauseAnyKey
             jmp _enterFCoef
     EndEnter:
+        mov funcThereIsF, 01h
         mov funcfX[12h], '4'
         pop bx
         pop ax
@@ -263,48 +239,55 @@ showFunction proc
 ;------------------------------------------------------------------
     push cx
     push si
-    xor cx, cx
-    xor si, si
-    mov cx, 05h
     printChar 0dah
     printCharTimes 0c4h, 4eh
     printStrln ln
     printStrln funcIsMem
     printStrln operInfo2
     printStr operInfo2
-    printStrln funcOriginal
+    printStr funcOriginal
+    xor cx, cx
+    xor si, si
+    mov cl, 05
     _showPrintFunction:
         cmp funcOnMemf[si], 00h
         jz _showPrinIncSi
-        mov al, funcOnMemf[si]
-        rol al, 01h
-        ror al, 01h
+        mov bl, funcOnMemf[si]
+        rol bl, 01h
+        ror bl, 01h
         jc _showNegFunc
         printChar '+'
         printChar 20h
         jmp _showNumberFunc
         _showNegFunc:
-            neg al
+            neg bl
             printChar '-'
             printChar 20h
         _showNumberFunc:
-            add al, '0'
-            mov bl, al
+            add bl, '0'
             printChar bl
         cmp cx, 01h
         je _showPrinIncSi
         printChar 0fah
         printChar 'x'
-        mov ah, cl
-        add ah, '0'
-        printChar ah
-        printChar 20h
+        cmp cx, 02h
+        je _showPrinIncSiPrev
+        mov al, cl
+        dec al
+        add al, '0'
+        printChar al
+        _showPrinIncSiPrev:
+            printChar 20h
         _showPrinIncSi:
             inc si
-            loop _showPrintFunction
+            dec cx
+            cmp cl, 00h
+            jnz _showPrintFunction
     _endShowFunction:
+        printStrln ln
         printChar 0c0h
         printCharTimes 0c4h, 4eh
+        printStrln ln
         printStrln ln
         pauseAnyKey
         pop si
@@ -340,6 +323,9 @@ calculatorMode proc
         printStrln operInfo2 
         printStr operInfo2 
         printStrln fileBuffer ;imprime el expresión leída
+        printChar 0c3h
+        printCharTimes 0c4h, 4eh
+        printStrln ln
         call calculateExpression
         printChar 0c0h
         printCharTimes 0c4h, 4eh
@@ -421,9 +407,11 @@ readExpression proc
     push ax ;almacena el valor previo de ax
     push cx ;almacena el valor previo de cx
     push di ;almacena el valor previos de di
+    push bx
     mov ax, 4202h
     xor cx, cx
     xor dx, dx
+    mov bx, fileHandler
     int 21H
     jc _readErr1 ;no se pudo leer el archivo
     push ax ;almacena el largo del archivo
@@ -495,6 +483,7 @@ readExpression proc
         cmp al, 00h
     _readEndP:
         closeFile fileHandler
+        pop bx
         pop di
         pop cx
         pop ax            
