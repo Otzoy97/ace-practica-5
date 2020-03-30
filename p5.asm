@@ -56,15 +56,18 @@ choose8             db "8$"
 ; INGRESAR FUNCION
 funcxInst           db "Ingrese coeficiente por coeficiente (ej: -4, 0, +2): $"
 funcfX              db "- Coeficiente de x4: $" ;18
-funcfXWrong         db "Coeficiente inválido: $"
+funcfXWrong         db "Coeficiente inv", 0a0h,"lido: $"
 funcNoMem           db "No hay ninguna funci", 0a2h, "n en memoria$"
 funcIsMem           db 0b3h, " Función en memoria:$"
 funcOnMemf          db 5 (00h)
 funcOnMemd          db 5 (00h)
 funcOnMemi          dd 5 (00h)
-funcOriginal        db "f(x) = "
-funcDerivada        db "f'(x) = "
-functegral          db "F(x) = "
+funcOriginal        db " f(x) = $"
+funcDerivada        db " f'(x) = $"
+functegral          db " F(x) = $"
+;------------------------------------------------------------------
+; MOSTRAR FUNCION
+funcxDExist         db "No hay funci", 0a2h, "n en memoria $"
 ;------------------------------------------------------------------
 ; CALCULADORA
 postFixOper         db 66 dup(00h)
@@ -127,8 +130,9 @@ main proc
         call enterFunction
     mainShowFunction:
         clearScreen
+        call functionExist
+        jz mainGetUserOp
         call showFunction
-        pauseAnyKey
         jmp mainGetUserOp
     mainShowDevFunction:
         clearScreen
@@ -144,12 +148,37 @@ main proc
         jmp mainGetUserOp
     mainCalcMode:
         call calculatorMode
-        pauseAnyKey
         jmp mainGetUserOp
     EndMain:
         mov ax, 4C00H
         int 21H
 main endp
+
+;------------------------------------------------------------------
+functionExist proc
+; Vrifica que exista una función en memoria
+; suma el contenido de funcOnMemf, si es igual a 0, entonces
+; no hay función
+    push ax
+    push cx
+    push si
+    mov cx, 0005h
+    _functionAddUp:
+        add al, funcOnMemf[si]
+        inc si
+        loop _functionAddUp
+    cmp al, 00H
+    jz _functionJZ
+    jmp _functionExistEnd
+    _functionJZ:
+        printStrln funcxDExist
+        pauseAnyKey
+    _functionExistEnd:
+        pop si
+        pop cx
+        pop ax
+        ret
+functionExist endp
 
 ;------------------------------------------------------------------
 enterFunction proc
@@ -193,8 +222,8 @@ enterFunction proc
             dec al
             mov funcfX[12h], al
             dec cx  ;emula el loop (ya que está muy lejos)
-            cmp cx, 00h
-            jne _enterFCoef ;regresa
+            cmp cl, 00h
+            jnz _enterFCoef ;regresa
             jmp EndEnter
         _enterFCoefNumberNeg:
             neg al
@@ -212,13 +241,14 @@ enterFunction proc
             inc di
             jmp _enterFCoefPosNull
         _enterFCoefWrong:
+            printStrln ln
             printStr funcfXWrong
             printChar chooseH[di]
-            printStr ln
+            printStrln ln
             pauseAnyKey
             jmp _enterFCoef
     EndEnter:
-        mov funcOnMemf[si], '4'
+        mov funcfX[12h], '4'
         pop bx
         pop ax
         pop cx
@@ -226,6 +256,61 @@ enterFunction proc
         pop di
         ret
 enterFunction endp
+
+;------------------------------------------------------------------
+showFunction proc
+; Imprime consecutivamente la ifromaciónde funcOnMemf
+;------------------------------------------------------------------
+    push cx
+    push si
+    xor cx, cx
+    xor si, si
+    mov cx, 05h
+    printChar 0dah
+    printCharTimes 0c4h, 4eh
+    printStrln ln
+    printStrln funcIsMem
+    printStrln operInfo2
+    printStr operInfo2
+    printStrln funcOriginal
+    _showPrintFunction:
+        cmp funcOnMemf[si], 00h
+        jz _showPrinIncSi
+        mov al, funcOnMemf[si]
+        rol al, 01h
+        ror al, 01h
+        jc _showNegFunc
+        printChar '+'
+        printChar 20h
+        jmp _showNumberFunc
+        _showNegFunc:
+            neg al
+            printChar '-'
+            printChar 20h
+        _showNumberFunc:
+            add al, '0'
+            mov bl, al
+            printChar bl
+        cmp cx, 01h
+        je _showPrinIncSi
+        printChar 0fah
+        printChar 'x'
+        mov ah, cl
+        add ah, '0'
+        printChar ah
+        printChar 20h
+        _showPrinIncSi:
+            inc si
+            loop _showPrintFunction
+    _endShowFunction:
+        printChar 0c0h
+        printCharTimes 0c4h, 4eh
+        printStrln ln
+        pauseAnyKey
+        pop si
+        pop cx
+        ret
+showFunction endp
 
 ;------------------------------------------------------------------
 calculatorMode proc
