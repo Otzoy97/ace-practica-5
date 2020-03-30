@@ -86,8 +86,7 @@ LOCAL GETCHAR, EOS, ERASE
         POP SI
 ENDM
 
-; -- COMPARA UNA CADENA charAC DESDE LA POSICION
-; -- from1 HASTA LA POSICION to1
+; COMPARA UNA CADENA charAC 
 compareStr MACRO charAC, charAR
 LOCAL _1, _2, _3, _4, _5, _6, _7, _8, _9
     PUSH SI

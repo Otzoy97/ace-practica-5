@@ -18,22 +18,64 @@ readFileFailed      db "Error: No se pudo leer el archivo$"
 illegalCharOnFile   db "Error: caracter inv",0a0h,"lido: $" ;30
 illegalEndOnFile    db "Error: no hubo final de instrucci", 0a2h ,"n $"
 illegalNameFile     db "Error: nombre de archivo no coincide con formato ##<ruta de archivo>##$"
-fileName            db 255 dup(00h)
-fileHandler         dw ?
+fileName            db 150 dup(00h)
 fileBuffer          db 255 dup(00h)
 fileBuffChar        db ?
+fileHandler         dw ?
 ;------------------------------------------------------------------
-;CALCULADORA
+; MENU PRINCIPAL
+mainMenu            db "UNIVERSIDAD DE SAN CARLOS DE GUATEMALA", 0ah, 0dh
+                    db "FACULTAD DE INGENIERIA", 0ah, 0dh
+                    db "ESCUELA DE CIENCIAS Y SISTEMAS", 0ah, 0dh
+                    db "ARQUITECTURA DE COMPUTADORES Y ENSAMBLADORES 1 A", 0ah, 0dh
+                    db "PRIMER SEMESTRE 2020", 0ah, 0dh
+                    db "SERGIO FERNANDO OTZOY GONZALEZ", 0ah, 0dh
+                    db "201602782", 0ah, 0dh, 0ah, 0dh
+                    db "QUINTA PRACTICA",  0ah, 0dh, 0ah, 0dh
+                    db "    MENU PRINCIPAL", 0dh, 0ah
+                    db "1.  Ingresar funci", 0a2h ,"n f(x)", 0dh, 0ah
+                    db "2.  Funci", 0a2h ,"n en memoria", 0dh, 0ah
+                    db "3.  Derivada f'(x)", 0dh, 0ah
+                    db "4.  Integral F(x)", 0dh, 0ah
+                    db "5.  Graficar funciones", 0dh, 0ah
+                    db "6.  Reporte", 0dh, 0ah
+                    db "7.  Modo calculadora", 0dh, 0ah
+                    db "8.  Salir", 0dh, 0ah,"$"
+choose              db "Elija una opci", 0a2h ,"n: $"
+chooseWrong         db "Opción no válida$"
+chooseH             db 50 dup(00h)
+choose1             db "1$"
+choose2             db "2$"
+choose3             db "3$"
+choose4             db "4$"
+choose5             db "5$"
+choose6             db "6$"
+choose7             db "7$"
+choose8             db "8$"
+;------------------------------------------------------------------
+; INGRESAR FUNCION
+funcxInst           db "Ingrese coeficiente por coeficiente (ej: -4, 0, +2): $"
+funcfX              db "- Coeficiente de x4: $" ;18
+funcfXWrong         db "Coeficiente inválido: $"
+funcNoMem           db "No hay ninguna funci", 0a2h, "n en memoria$"
+funcIsMem           db 0b3h, " Función en memoria:$"
+funcOnMemf          db 5 (00h)
+funcOnMemd          db 5 (00h)
+funcOnMemi          dd 5 (00h)
+funcOriginal        db "f(x) = "
+funcDerivada        db "f'(x) = "
+functegral          db "F(x) = "
+;------------------------------------------------------------------
+; CALCULADORA
 postFixOper         db 66 dup(00h)
 tempOper            dd 0
 operOverflow        db 0b3h," Error: desbordamiento en multiplicaci", 0a2h, "n$"
 operDiviZero        db 0b3h," Error: divisi", 0a2h, "n ilegal entre cero$"
 operInfo            db 0b3h," Operaci", 0a2h, "n:$"
-operInfo2           db 0b3h,"  $"
+operInfo2           db 0b3h,"    $"
 operInfoSucc        db 0b3h," Resultado:$"
-
 ;------------------------------------------------------------------
-;ENCABEZADO DE REPORTE
+; ENCABEZADO DE REPORTE
 reportHeader        db "UNIVERSIDAD DE SAN CARLOS DE GUATEMALA", 0ah, 0dh
                     db "FACULTAD DE INGENIERIA", 0ah, 0dh
                     db "ESCUELA DE CIENCIAS Y SISTEMAS", 0ah, 0dh
@@ -55,11 +97,135 @@ fxIntegral          db "F(x) = ", 0ah, 0dh
 main proc
     mov ax, @data
     mov ds, ax
-    call calculatorMode
+    mainGetUserOp:
+        clearScreen ;limpia la pantalla
+        printStrln mainMenu ;imprime el encabezado
+        printStr choose ;imprime una decisión
+        flushStr chooseH, 50, 00H ;limpia la entrada del usuario
+        getLine chooseH ;recupera la entrada del usuario
+        compareStr chooseH, choose1 ;compara la entrada con 1
+        je mainEnterFunction
+        compareStr chooseH, choose2 ;compara la entrada con 2
+        je mainShowFunction
+        compareStr chooseH, choose3 ;compara la entrada con 3
+        je mainShowDevFunction
+        compareStr chooseH, choose4 ;compara la entrada con 4
+        je mainShowIntFunction
+        compareStr chooseH, choose5 ;compara la entrada con 5
+        je mainGraphFunction
+        compareStr chooseH, choose6 ;compara la entrada con 6
+        je mainGenRep
+        compareStr chooseH, choose7 ;compara la entrada con 7
+        je mainCalcMode
+        compareStr chooseH, choose8 ;compara la entrada con 8
+        je EndMain
+        printStrln chooseWrong ;no es una opción válida
+        pauseAnyKey 
+        jmp mainGetUserOp ;regresa al main
+    mainEnterFunction:
+        clearScreen
+        call enterFunction
+    mainShowFunction:
+        clearScreen
+        call showFunction
+        pauseAnyKey
+        jmp mainGetUserOp
+    mainShowDevFunction:
+        clearScreen
+        jmp mainGetUserOp
+    mainShowIntFunction:
+        clearScreen
+        jmp mainGetUserOp
+    mainGraphFunction:
+        clearScreen
+        jmp mainGetUserOp
+    mainGenRep:  
+        clearScreen
+        jmp mainGetUserOp
+    mainCalcMode:
+        call calculatorMode
+        pauseAnyKey
+        jmp mainGetUserOp
     EndMain:
         mov ax, 4C00H
         int 21H
 main endp
+
+;------------------------------------------------------------------
+enterFunction proc
+; Solicita la entra de 5 coeficientes,
+; valida la entrada del usuario, asegurandose que sean número con
+; o sin signo. Si son números con signo negativo obtiene su comple-
+; mento y luego lo guarda, si es positivo simplemente lo guarda
+;------------------------------------------------------------------
+    push di
+    push si
+    push cx
+    push ax
+    push bx
+    mov cx, 05h
+    _enterFCoef:
+        xor di, di ;restablecer indice
+        xor bx, bx ;restablece base
+        clearScreen
+        printStr funcfX
+        flushStr chooseH, 50, 00h
+        getLine chooseH
+        _enterFCoefPosNull:
+            cmp chooseH[di], 00h ;verifica que no sea nulo
+            je _enterFCoefWrong ;salta a indicar que es un error
+            cmp bh, 00h ;verifica si bl es 0
+            je _enterFCoefSignFlow 
+        _enterFCoefNumber1:
+            cmp chooseH[di], '0'
+            jb _enterFCoefWrong
+            cmp chooseH[di], '9'
+            ja _enterFCoefWrong
+            mov al, chooseH[di]
+            sub al, '0'
+            cmp bh, 00h
+            jne _enterFCoefNumberNeg
+        _enterFCoefNumber2:
+            mov funcOnMemf[si], al
+            xor bl, bl
+            inc si
+            mov al, funcfX[12h] ;compone la etiqueta de coeficiente
+            dec al
+            mov funcfX[12h], al
+            dec cx  ;emula el loop (ya que está muy lejos)
+            cmp cx, 00h
+            jne _enterFCoef ;regresa
+            jmp EndEnter
+        _enterFCoefNumberNeg:
+            neg al
+            jmp _enterFCoefNumber2   
+        _enterFCoefSignFlow:
+            cmp chooseH[di], '-'
+            je _enterFCoefSignFlowMinus
+            cmp chooseH[di], '+'
+            je _enterIncIndexes
+            jmp _enterFCoefNumber1
+        _enterFCoefSignFlowMinus:
+            mov bh, 01h
+        _enterIncIndexes:
+            inc bl
+            inc di
+            jmp _enterFCoefPosNull
+        _enterFCoefWrong:
+            printStr funcfXWrong
+            printChar chooseH[di]
+            printStr ln
+            pauseAnyKey
+            jmp _enterFCoef
+    EndEnter:
+        mov funcOnMemf[si], '4'
+        pop bx
+        pop ax
+        pop cx
+        pop si
+        pop di
+        ret
+enterFunction endp
 
 ;------------------------------------------------------------------
 calculatorMode proc
@@ -86,6 +252,7 @@ calculatorMode proc
         printCharTimes 0c4h, 4eh
         printStrln ln
         printStrln operInfo 
+        printStrln operInfo2 
         printStr operInfo2 
         printStrln fileBuffer ;imprime el expresión leída
         call calculateExpression
@@ -418,6 +585,7 @@ calculateExpression proc
             cmp eax, 00000000h ;eax debe ser igual a 0 para saltar a mostrar el resultado
             jne _calcLoopToAscii
             printStrln operInfoSucc
+            printStrln operInfo2
             printStr operInfo2
             printChar fileBuffChar
             jmp _calcShowResult
