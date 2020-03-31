@@ -20,3 +20,21 @@ pauseAnyKey macro
     int 21h 
     pop ax
 endm
+
+videoModeOn macro
+    push ax
+    mov ah, 00h
+    mov al, 13h
+    int 10h
+    mov ax, 0a000h
+    mov ds, ax
+    pop ax
+endm
+
+textModeOn macro
+    push ax
+    mov al, 00h
+    mov al, 03h
+    int 10h
+    pop ax
+endm
