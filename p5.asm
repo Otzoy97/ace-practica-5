@@ -58,10 +58,13 @@ funcxInst           db "Ingrese coeficiente por coeficiente (ej: -4, 0, +2): $"
 funcfX              db "- Coeficiente de x4: $" ;18
 funcfXWrong         db "Coeficiente inv", 0a0h,"lido: $"
 funcNoMem           db "No hay ninguna funci", 0a2h, "n en memoria$"
-funcIsMem           db 0b3h, " Funci", 0a2h ,"n en memoria:$"
+funcIsMem           db 0b3h, " Funci", 0a2h ,"n original:$"
+funcIsDev           db 0b3h, " Derivada de la funci", 0a2h ,"n:$"
+funcIsInt           db 0b3h, " Integral de la funci", 0a2h ,"n:$"
 funcOnMemf          db 5 dup(00h)
 funcOnMemd          db 5 dup(00h)
-funcOnMemi          dd 5 dup(00h)
+funcOnMemi          db 5 dup(00h)
+funcIntCte          db ?
 funcThereIsF        db 0
 funcOriginal        db " f(x) = $"
 funcDerivada        db " f'(x) = $"
@@ -137,9 +140,15 @@ main proc
         jmp mainGetUserOp
     mainShowDevFunction:
         clearScreen
+        cmp funcThereIsF, 00h
+        jz mainGetUserOp
+        call showDevFunction
         jmp mainGetUserOp
     mainShowIntFunction:
         clearScreen
+        cmp funcThereIsF, 00h
+        jz mainGetUserOp
+        call showIntFunction
         jmp mainGetUserOp
     mainGraphFunction:
         clearScreen
@@ -223,6 +232,25 @@ enterFunction proc
             pauseAnyKey
             jmp _enterFCoef
     EndEnter:
+        xor si, si
+        xor cx, 05h
+        _enterCreateDevInt:
+            mov al, cl ;mueve el contado actual 
+            dec al     ;resta uno
+            mov bl, funcOnMemf[si] ;mete coef
+            imul bl     ;multiplica
+            mov funcOnMemd[si], al ;almacena el coef de derivada
+            cmp bl, 00h 
+            jnz _enterCreateDevInt1 ;si no es cero almacena cl
+            mov funcOnMemi[si], 00h
+            jmp _enterCreateDevInt2
+            _enterCreateDevInt1:
+                mov funcOnMemi[si], cl
+            _enterCreateDevInt2:
+                inc si
+                dec cx
+                cmp cl, 00h
+                jnz _enterCreateDevInt
         mov funcThereIsF, 01h
         mov funcfX[12h], '4'
         pop bx
@@ -256,28 +284,28 @@ showFunction proc
         rol bl, 01h
         ror bl, 01h
         jc _showNegFunc
-        printChar '+'
-        printChar 20h
+        printChar '+'     ;imprime un signo más
+        printChar 20h     ;imprime un espacio
         jmp _showNumberFunc
         _showNegFunc:
             neg bl
-            printChar '-'
-            printChar 20h
+            printChar '-' ;imprime un signo menos
+            printChar 20h ;imprime un espacio
         _showNumberFunc:
             add bl, '0'
-            printChar bl
-        cmp cx, 01h
+            printChar bl  ;imprime el coeficiente
+        cmp cx, 01h       ;si es 1 no imprime 1x0, solo el coef
         je _showPrinIncSi
-        printChar 0fah
-        printChar 'x'
-        cmp cx, 02h
+        printChar 0fah    ;imprime un punto
+        printChar 'x'     ;imprime una x
+        cmp cx, 02h       ;si es 2 no imprme x1, solo x
         je _showPrinIncSiPrev
-        mov al, cl
+        mov al, cl        ;imprime la potencia de x
         dec al
         add al, '0'
         printChar al
         _showPrinIncSiPrev:
-            printChar 20h
+            printChar 20h ;imprime un espacio
         _showPrinIncSi:
             inc si
             dec cx
@@ -294,6 +322,94 @@ showFunction proc
         pop cx
         ret
 showFunction endp
+
+;------------------------------------------------------------------
+showDevFunction proc
+    push ax
+    push bx
+    push cx
+    push si
+    printChar 0dah
+    printCharTimes 0c4h, 4eh
+    printStrln ln
+    printStrln funcIsDev
+    printStrln operInfo2
+    printStr operInfo2
+    printStr funcDerivada
+    xor ax, ax
+    xor bx, bx  
+    xor cx, cx
+    xor si, si
+    mov cl, 05h
+    _showDevPrint:
+        cmp funcOnMemf[si], 00h  ;no imprime los coeficientes 0
+        jz _showReturnDevPrint    ;salta e incrementa si
+        mov bl, funcOnMemf[si]  
+        rol bl, 01h
+        ror bl, 01h
+        jc _showDevNeg           ;determina si es negativo
+        printChar '+'            ;imprime un signo 'más'
+        printChar 20h            ;imprime un espacio
+        jmp _showDevNumberFunc
+        _showDevNeg:
+            neg bl
+            printChar '-'        ;imprime un signo 'menos'
+            printChar 20h        ;imprime un espacio
+        _showDevNumberFunc:      ;a través de un loop compone el número
+            push cx              ;guarda el contador
+            xor cx, cx           ;limpia el contador
+            xor ah, ah           ;limpia el acumulador high
+            mov al, bl           ;mueve el resultado a acumulador low
+            mov bx, 000ah          ;mueve un 10 a la base
+        _showDevNumberFunc1:
+            cbw
+            div bx               ;divide dentro de 10
+            push dx              ;obtiene el residuo
+            inc cx               ;aumenta el contador
+            xor dx, dx           ;limpia el residuo
+            cmp ax, 0000h        ;si el cociente no es cero
+            jnz _showDevNumberFunc1 
+            _showDevNumberFunc1Ascii:
+                pop ax           ;recupera el número
+                add al, '0'      ;le suma un '0'  
+                mov bl, al        
+                printChar bl     ;imprime el número
+                loop _showDevNumberFunc1Ascii
+            pop cx               ;reestablece el contador superior
+            cmp cx, 02h          ;si es 02 no imprime 1x0, solo el coef
+            jz _showReturnDevPrint
+            printChar 0fah
+            printChar 'x'
+            cmp cx, 03h          ;si es 03 no imprime 1x1, solo 1x
+            jz _showReturnDevPrintPrev
+            mov al, cl
+            sub al, 02h          ;le resta dos para obtener la potencia
+            add al, '0'
+            printChar al
+            _showReturnDevPrintPrev:
+                printChar 20h
+            _showReturnDevPrint:
+                inc si
+                dec cx
+                cmp cl, 00h
+                jnz _showDevPrint
+    _showDevFunctionEnd:
+        printStrln ln
+        printChar 0c0h
+        printCharTimes 0c4h, 4eh
+        printStrln ln
+        printStrln ln
+        pauseAnyKey
+        pop si
+        pop cx
+        pop bx
+        pop ax    
+        ret
+showDevFunction endp
+
+showIntFunction proc
+    ret
+showIntFunction endp
 
 ;------------------------------------------------------------------
 calculatorMode proc
