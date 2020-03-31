@@ -90,22 +90,28 @@ operInfo2           db 0b3h,"    $"
 operInfoSucc        db 0b3h," Resultado:$"
 ;------------------------------------------------------------------
 ; ENCABEZADO DE REPORTE
-reportHeader        db "UNIVERSIDAD DE SAN CARLOS DE GUATEMALA", 0ah, 0dh
-                    db "FACULTAD DE INGENIERIA", 0ah, 0dh
-                    db "ESCUELA DE CIENCIAS Y SISTEMAS", 0ah, 0dh
-                    db "ARQUITECTURA DE COMPUTADORES Y ENSAMBLADORES 1 A", 0ah, 0dh
-                    db "PRIMER SEMESTRE 2020", 0ah, 0dh
-                    db "SERGIO FERNANDO OTZOY GONZALEZ", 0ah, 0dh
-                    db "201602782", 0ah, 0dh, 0ah, 0dh
-                    db "REPORTE PRACTICA NO. 3",  0ah, 0dh, 0ah, 0dh
-reportDate          db "Fecha: 00/00/0000", 0ah, 0dh
-reportTime          db "Hora: 00:00:00", 0ah, 0dh, 0ah, 0dh
-reportOriginal      db "Función original", 0ah, 0dh
-reportDerivada      db "Función derivada", 0ah, 0dh
-reportIntegral      db "Función integral", 0ah, 0dh
-fxOriginal          db "f(x) = ", 0ah, 0dh
-fxDerivada          db "f'(x) = ", 0ah, 0dh
-fxIntegral          db "F(x) = ", 0ah, 0dh
+reportHeader        db "UNIVERSIDAD DE SAN CARLOS DE GUATEMALA", 0ah
+                    db "FACULTAD DE INGENIERIA", 0ah
+                    db "ESCUELA DE CIENCIAS Y SISTEMAS", 0ah
+                    db "ARQUITECTURA DE COMPUTADORES Y ENSAMBLADORES 1 A", 0ah
+                    db "PRIMER SEMESTRE 2020", 0ah
+                    db "SERGIO FERNANDO OTZOY GONZALEZ", 0ah
+                    db "201602782", 0ah, 0ah
+                    db "REPORTE PRACTICA NO. 5",  0ah, 0ah
+reportDate          db "Fecha: "
+DATE                db "00/00/0000", 0ah
+reportTime          db "Hora: "
+TIME                db "00:00:00", 0ah, 0dh, 0ah, 0dh
+reportOriginal      db "Funci", 0a2h, "n original", 0ah, 0dh
+                    db "f(x) = " 
+fxOriginal          db "                               ", 0ah, 0dh ;31 para limpiar
+reportDerivada      db "Funci", 0a2h, "n derivada", 0ah, 0dh
+                    db "f'(x) = "
+fxDerivada          db "                                   ", 0ah, 0dh ;35 para limpiar
+reportIntegral      db "Funci", 0a2h, "n integral", 0ah, 0dh
+                    db "F(x) = "
+fxIntegral          db "                                              $" ;46 para limpiar
+reportName          db "p5RepA.txt", 00h ;5 para reporte
 
 .code
 main proc
@@ -170,6 +176,7 @@ main proc
         clearScreen
         cmp funcThereIsF, 00h
         jz mainMsgThereIsNoFunction
+        call genReport
         jmp mainGetUserOp
     mainCalcMode:
         call calculatorMode
@@ -272,7 +279,6 @@ enterFunction proc
             loop _enterSetDerivate
         mov funcThereIsF, 01h
         mov funcfX[12h], '4'
-        pauseAnyKey
         pop bx
         pop ax
         pop cx
@@ -337,6 +343,7 @@ showFunction proc
         printCharTimes 0c4h, 4eh
         printStrln ln
         printStrln ln
+        pauseAnyKey
         pop si
         pop cx
         ret
@@ -425,6 +432,7 @@ showDevFunction proc
         pop ax    
         ret
 showDevFunction endp
+
 ;------------------------------------------------------------------
 showIntFunction proc
 ; Imprime consecutivamente la información de funOnMemf
@@ -498,18 +506,78 @@ showIntFunction proc
     ret
 showIntFunction endp
 
-
+;------------------------------------------------------------------
 genReport proc
+; Llena los espacios vaciós de la sección de reportes (en el segmento de dato)
+; Luego los escribe en un archivo
     push ax
     push bx
     push cx
     push si
-
-
+    push di
+    xor ax, ax
+    xor bx, bx
+    xor cx, cx
+    xor si, si
+    xor di, di
+    call getDate
+    call getTime
+    flushStr fxOriginal, 1fh, 00h
+    flushStr fxDerivada, 23h, 00h
+    flushStr fxIntegral, 2eh, 00h
+    mov cx, 05h
+    _genOFMain:
+        cmp funcOnMemf[si], 00h
+        jz _genOFMainIncSI
+        mov bl, funcOnMemf[si]
+        rol bl, 01h
+        ror bl, 01h
+        jc _genOFNeg
+        mov fxOriginal[di], '+'
+        jmp _getOFNumber
+        _genOFNeg:
+            neg bl
+            mov fxOriginal[di], '-'
+        _getOFNumber:
+            inc di
+            mov fxOriginal[di], 20h
+            inc di
+            add bl, '0'
+            mov fxOriginal[di], bl
+            inc di
+        cmp cx, 01h ;imprime solo el coeficiente
+        je _genOFMainIncSI
+        mov ah, '·'
+        mov fxOriginal[di], ah
+        inc di 
+        mov fxOriginal[di], 'x'
+        inc di
+        cmp cx, 02h
+        je _genOFMainIncSIPrev
+        mov al, cl
+        dec al
+        add al, '0'
+        mov fxOriginal[di], al
+        inc di
+        _genOFMainIncSIPrev:
+            mov fxOriginal[di], 20h
+            inc di
+        _genOFMainIncSI:
+            inc si
+            dec cx
+            cmp cl, 00h
+            jnz _genOFMain
+    _genFile:
+        createFile reportName, fileHandler
+        contarRep reportHeader
+        writeFile fileHandler, reportHeader, si
+        closeFile fileHandler
+    pop di
     pop si
     pop cx
     pop bx
     pop ax
+    ret
 genReport endp
 
 ;------------------------------------------------------------------
@@ -901,4 +969,52 @@ calculateExpression proc
         pop si
     ret
 calculateExpression endp
+
+getDate PROC
+	MOV AH, 04H
+	INT 1AH
+	MOV BX, OFFSET DATE
+	MOV AL, DL
+	CALL toASCII
+	INC BX
+	MOV AL, DH	
+	CALL toASCII
+	INC BX
+	MOV AL, CH
+	CALL toASCII
+	MOV AL, CL
+	CALL toASCII
+	RET
+getDate ENDP
+
+getTime PROC
+	MOV AH, 02H
+	INT 1AH
+	MOV BX, OFFSET TIME
+	MOV AL, CH
+	CALL toASCII
+	INC BX
+	MOV AL, CL
+	CALL toASCII
+	INC BX
+	MOV AL, DH
+	CALL toASCII
+	RET
+getTime ENDP
+
+toASCII PROC
+	PUSH AX
+	SHR AX, 4
+	AND AX, 0FH
+	ADD AX, '0'
+	MOV [BX], AL
+	INC BX
+	POP AX
+	AND AX, 0FH
+	ADD AX, '0'
+	MOV [BX], AL
+	INC BX
+	RET
+toASCII ENDP
+
 end main

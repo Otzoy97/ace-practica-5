@@ -2,6 +2,8 @@ createFile MACRO fileName, fileHandler
 LOCAL _1, _2
     PUSH AX
     PUSH CX
+    xor ax, ax
+    xor cx, cx
     MOV AH, 3CH
     MOV CX, 00H
     MOV DX, OFFSET fileName
@@ -17,9 +19,18 @@ LOCAL _1, _2
     POP AX
 ENDM
 
+contarRep MACRO varOffset
+    xor si, si
+    mov bx, offset varOffset
+    mov al, '$'
+    .while ( [BX + SI] != AL)
+        INC SI
+    .endw
+ENDM
+
 writeFile MACRO fileHandler, fileContent, fileSize
 LOCAL _1
-    PUSH AH
+    PUSH AX
     PUSH CX
     PUSH BX
     MOV AH, 40H
@@ -30,10 +41,10 @@ LOCAL _1
     JNC _1
     printStrln writeFileFailed
     pauseAnyKey
-    _1
+    _1:
     POP BX
     POP CX
-    POP AH
+    POP AX
 ENDM
 
 openFile MACRO  fileName, fileHandler
