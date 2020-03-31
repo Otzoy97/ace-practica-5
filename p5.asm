@@ -42,7 +42,7 @@ mainMenu            db "UNIVERSIDAD DE SAN CARLOS DE GUATEMALA", 0ah, 0dh
                     db "7.  Modo calculadora", 0dh, 0ah
                     db "8.  Salir", 0dh, 0ah,"$"
 choose              db "Elija una opci", 0a2h ,"n: $"
-chooseWrong         db "Opción no válida$"
+chooseWrong         db "Opci", 0a2h ,"n no v",0a0h,"lida$"
 chooseH             db 50 dup(00h)
 choose1             db "1$"
 choose2             db "2$"
@@ -240,7 +240,6 @@ enterFunction proc
             mov bl, funcOnMemf[si] ;mete coef
             imul bl     ;multiplica
             mov funcOnMemd[si], al ;almacena el coef de derivada
-            cmp bl, 00h 
             jnz _enterCreateDevInt1 ;si no es cero almacena cl
             mov funcOnMemi[si], 00h
             jmp _enterCreateDevInt2
@@ -253,6 +252,7 @@ enterFunction proc
                 jnz _enterCreateDevInt
         mov funcThereIsF, 01h
         mov funcfX[12h], '4'
+        pauseAnyKey
         pop bx
         pop ax
         pop cx
@@ -342,27 +342,26 @@ showDevFunction proc
     xor si, si
     mov cl, 05h
     _showDevPrint:
-        cmp funcOnMemf[si], 00h  ;no imprime los coeficientes 0
+        cmp funcOnMemd[si], 00h  ;no imprime los coeficientes 0
         jz _showReturnDevPrint    ;salta e incrementa si
-        mov bl, funcOnMemf[si]  
-        rol bl, 01h
-        ror bl, 01h
+        mov al, funcOnMemd[si]  
+        rol al, 01h
+        ror al, 01h
         jc _showDevNeg           ;determina si es negativo
         printChar '+'            ;imprime un signo 'más'
         printChar 20h            ;imprime un espacio
         jmp _showDevNumberFunc
         _showDevNeg:
-            neg bl
+            neg al
             printChar '-'        ;imprime un signo 'menos'
             printChar 20h        ;imprime un espacio
         _showDevNumberFunc:      ;a través de un loop compone el número
             push cx              ;guarda el contador
             xor cx, cx           ;limpia el contador
             xor ah, ah           ;limpia el acumulador high
-            mov al, bl           ;mueve el resultado a acumulador low
-            mov bx, 000ah          ;mueve un 10 a la base
+            mov bl, 0ah          ;mueve un 10 a la base
         _showDevNumberFunc1:
-            cbw
+            cwd                  ;extiende el signo de ax a dx
             div bx               ;divide dentro de 10
             push dx              ;obtiene el residuo
             inc cx               ;aumenta el contador
