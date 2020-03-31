@@ -101,14 +101,14 @@ reportHeader        db "UNIVERSIDAD DE SAN CARLOS DE GUATEMALA", 0ah
 reportDate          db "Fecha: "
 DATE                db "00/00/0000", 0ah
 reportTime          db "Hora: "
-TIME                db "00:00:00", 0ah, 0dh, 0ah, 0dh
-reportOriginal      db "Funci", 0a2h, "n original", 0ah, 0dh
+TIME                db "00:00:00", 0ah, 0ah
+reportOriginal      db "Funci", 0f3h, "n original", 0ah
                     db "f(x) = " 
-fxOriginal          db "                               ", 0ah, 0dh ;31 para limpiar
-reportDerivada      db "Funci", 0a2h, "n derivada", 0ah, 0dh
+fxOriginal          db "                               ", 0ah, 0ah ;31 para limpiar
+reportDerivada      db "Funci", 0f3h, "n derivada", 0ah
                     db "f'(x) = "
-fxDerivada          db "                                   ", 0ah, 0dh ;35 para limpiar
-reportIntegral      db "Funci", 0a2h, "n integral", 0ah, 0dh
+fxDerivada          db "                                   ", 0ah, 0ah ;35 para limpiar
+reportIntegral      db "Funci", 0f3h, "n integral", 0ah
                     db "F(x) = "
 fxIntegral          db "                                              $" ;46 para limpiar
 reportName          db "p5RepA.txt", 00h ;5 para reporte
@@ -534,11 +534,11 @@ genReport proc
         ror bl, 01h
         jc _genOFNeg
         mov fxOriginal[di], '+'
-        jmp _getOFNumber
+        jmp _genOFNumber
         _genOFNeg:
             neg bl
             mov fxOriginal[di], '-'
-        _getOFNumber:
+        _genOFNumber:
             inc di
             mov fxOriginal[di], 20h
             inc di
@@ -547,8 +547,7 @@ genReport proc
             inc di
         cmp cx, 01h ;imprime solo el coeficiente
         je _genOFMainIncSI
-        mov ah, '·'
-        mov fxOriginal[di], ah
+        mov fxOriginal[di], 0b7h
         inc di 
         mov fxOriginal[di], 'x'
         inc di
@@ -567,11 +566,132 @@ genReport proc
             dec cx
             cmp cl, 00h
             jnz _genOFMain
+    ;------------------------------------------------------------
+    xor cx, cx
+    xor si, si
+    xor di, di
+    mov cl, 05h
+    _genDFMain:
+        cmp funcOnMemd[si], 00h
+        jz _genDFMainIncSi
+        mov al, funcOnMemd[si]
+        rol al, 01h
+        ror al, 01h
+        jc _genDFNeg
+        mov fxDerivada[di], '+'
+        inc di
+        mov fxDerivada[di], 20h
+        inc di
+        jmp _genDFNumber
+        _genDFNeg:
+            neg al
+            mov fxDerivada[di], '-'
+            inc di
+            mov fxDerivada[di], 20h
+            inc di
+        _genDFNumber:
+            push cx
+            xor cx, cx
+            xor ah, ah
+            xor bx, bx
+            mov bl, 0ah
+            _genDFNumber1:
+                cwd
+                div bx
+                push dx
+                inc cx
+                xor dx, dx
+                cmp ax, 0000h
+                jnz _genDFNumber1
+            _genDFNumber2:
+                pop ax
+                add al, '0'
+                mov fxDerivada[di], al
+                inc di
+                loop _genDFNumber2
+            pop cx
+            cmp cx, 02h
+            jz _genDFMainIncSi
+            mov fxDerivada[di], 0b7h
+            inc di
+            mov fxDerivada[di], 'x'
+            inc di
+            cmp cx, 03h
+            jz _genDFMainIncSiPrev
+            mov al, cl
+            sub al, 02H
+            add al, '0'
+            mov fxDerivada[di], al
+            inc di
+            _genDFMainIncSiPrev:
+                mov fxDerivada[di], 20h
+                inc di
+            _genDFMainIncSi:
+                inc si
+                dec cx
+                cmp cl, 00h
+                jnz _genDFMain
+    ;------------------------------------------------------------
+    xor cx, cx
+    xor si, si
+    xor di, di
+    mov cl, 05h
+    _genIFMain:
+        cmp funcOnMemf[si], 00h
+        jz _genIFIncSi
+        mov al, funcOnMemf[si]
+        rol al, 01h
+        ror al, 01h
+        jc _genIFNeg
+        mov fxIntegral[di], '+'
+        jmp _genIFNumber
+        _genIFNeg:
+            neg al
+            mov fxIntegral[di], '-'
+        _genIFNumber:
+            inc di
+            mov fxIntegral[di], 20h
+            inc di
+            add al, '0'
+            mov fxIntegral[di], al
+            inc di
+            cmp cx, 01h
+            jz _genIFX
+            mov al, cl
+            add al, '0'
+            mov fxIntegral[di], '/'
+            inc di
+            mov fxIntegral[di], al
+            inc di
+        _genIFX:
+            mov fxIntegral[di], 0b7h
+            inc di
+            mov fxIntegral[di], 'x'
+            inc di
+            cmp cx, 01h
+            jz _genIFIncSi
+            mov fxIntegral[di], al
+            inc di
+            mov fxIntegral[di], 20h
+            inc di
+        _genIFIncSi:
+            inc si
+            dec cx
+            cmp cl, 00h
+            jnz _genIFMain
+        mov fxIntegral[di], 20h
+        inc di
+        mov fxIntegral[di], '+'
+        inc di 
+        mov fxIntegral[di], 20h
+        inc di
+        mov fxIntegral[di], 'c'
     _genFile:
         createFile reportName, fileHandler
         contarRep reportHeader
         writeFile fileHandler, reportHeader, si
         closeFile fileHandler
+        inc reportName[5]
     pop di
     pop si
     pop cx
