@@ -71,9 +71,16 @@ funcDerivada        db " f'(x) = $"
 functegral          db " F(x) = $"
 ;------------------------------------------------------------------
 ; MOSTRAR FUNCION
-funcxDExist         db "No hay funci", 0a2h, "n en memoria $"
+funcxDExist         db 0b3h, " No hay funci", 0a2h, "n en memoria                                                   ", 0b3h, "$"
 ;------------------------------------------------------------------
-; CALCULADORA
+; GRAFICAR FUNCION
+graphMenu           db "     GRAFICAR FUNCIONES", 0dh, 0ah
+                    db " 1.  Graficar original f(x)", 0dh, 0ah
+                    db " 2.  Graficar derivada f'(x)", 0dh, 0ah
+                    db " 3.  Graficar integral F(x)", 0dh, 0ah
+                    db " 4.  Regresar$"
+;------------------------------------------------------------------
+; CALCULADORA  
 postFixOper         db 66 dup(00h)
 tempOper            dd 0
 operOverflow        db 0b3h," Error: desbordamiento en multiplicaci", 0a2h, "n$"
@@ -139,29 +146,46 @@ main proc
     mainShowFunction:
         clearScreen
         cmp funcThereIsF, 00h
-        jz mainGetUserOp
+        jz mainMsgThereIsNoFunction
         call showFunction
         jmp mainGetUserOp
     mainShowDevFunction:
         clearScreen
         cmp funcThereIsF, 00h
-        jz mainGetUserOp
+        jz mainMsgThereIsNoFunction
         call showDevFunction
         jmp mainGetUserOp
     mainShowIntFunction:
         clearScreen
         cmp funcThereIsF, 00h
-        jz mainGetUserOp
+        jz mainMsgThereIsNoFunction
         call showIntFunction
         jmp mainGetUserOp
     mainGraphFunction:
         clearScreen
+        cmp funcThereIsF, 00h
+        jz mainMsgThereIsNoFunction
         jmp mainGetUserOp
     mainGenRep:  
         clearScreen
+        cmp funcThereIsF, 00h
+        jz mainMsgThereIsNoFunction
         jmp mainGetUserOp
     mainCalcMode:
         call calculatorMode
+        jmp mainGetUserOp
+    mainMsgThereIsNoFunction:
+        clearScreen
+        printChar 0dah
+        printCharTimes 0c4h, 4dh
+        printChar 0bfh
+        printStrln ln
+        printStrln funcxDExist
+        printChar 0c0h
+        printCharTimes 0c4h, 4dh
+        printChar 0d9h
+        printStrln ln
+        pauseAnyKey
         jmp mainGetUserOp
     EndMain:
         mov ax, 4C00H
@@ -480,7 +504,7 @@ genReport proc
     push bx
     push cx
     push si
-    
+
 
     pop si
     pop cx
