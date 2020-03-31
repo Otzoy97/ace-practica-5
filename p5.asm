@@ -24,25 +24,26 @@ fileBuffChar        db ?
 fileHandler         dw ?
 ;------------------------------------------------------------------
 ; MENU PRINCIPAL
-mainMenu            db "UNIVERSIDAD DE SAN CARLOS DE GUATEMALA", 0ah, 0dh
-                    db "FACULTAD DE INGENIERIA", 0ah, 0dh
-                    db "ESCUELA DE CIENCIAS Y SISTEMAS", 0ah, 0dh
-                    db "ARQUITECTURA DE COMPUTADORES Y ENSAMBLADORES 1 A", 0ah, 0dh
-                    db "PRIMER SEMESTRE 2020", 0ah, 0dh
-                    db "SERGIO FERNANDO OTZOY GONZALEZ", 0ah, 0dh
-                    db "201602782", 0ah, 0dh, 0ah, 0dh
-                    db "QUINTA PRACTICA",  0ah, 0dh, 0ah, 0dh
-                    db "    MENU PRINCIPAL", 0dh, 0ah
-                    db "1.  Ingresar funci", 0a2h ,"n f(x)", 0dh, 0ah
-                    db "2.  Funci", 0a2h ,"n en memoria", 0dh, 0ah
-                    db "3.  Derivada f'(x)", 0dh, 0ah
-                    db "4.  Integral F(x)", 0dh, 0ah
-                    db "5.  Graficar funciones", 0dh, 0ah
-                    db "6.  Reporte", 0dh, 0ah
-                    db "7.  Modo calculadora", 0dh, 0ah
-                    db "8.  Salir", 0dh, 0ah,"$"
-choose              db "Elija una opci", 0a2h ,"n: $"
-chooseWrong         db "Opci", 0a2h ,"n no v",0a0h,"lida$"
+mainMenu            db 0b3h," UNIVERSIDAD DE SAN CARLOS DE GUATEMALA                                      ", 0b3h, 0ah, 0dh
+                    db 0b3h," FACULTAD DE INGENIERIA                                                      ", 0b3h, 0ah, 0dh
+                    db 0b3h," ESCUELA DE CIENCIAS Y SISTEMAS                                              ", 0b3h, 0ah, 0dh
+                    db 0b3h," ARQUITECTURA DE COMPUTADORES Y ENSAMBLADORES 1 A                            ", 0b3h, 0ah, 0dh
+                    db 0b3h," PRIMER SEMESTRE 2020                                                        ", 0b3h, 0ah, 0dh
+                    db 0b3h," SERGIO FERNANDO OTZOY GONZALEZ                                              ", 0b3h, 0ah, 0dh
+                    db 0b3h," 201602782                                                                   ", 0b3h, 0ah, 0dh
+                    db 0b3h,"                                                                             ", 0b3h, 0ah, 0dh
+                    db 0b3h," QUINTA PRACTICA                                                             ", 0b3h, 0ah, 0dh, 0ah, 0dh
+                    db "     MENU PRINCIPAL", 0dh, 0ah
+                    db " 1.  Ingresar funci", 0a2h ,"n f(x)", 0dh, 0ah
+                    db " 2.  Funci", 0a2h ,"n en memoria", 0dh, 0ah
+                    db " 3.  Derivada f'(x)", 0dh, 0ah
+                    db " 4.  Integral F(x)", 0dh, 0ah
+                    db " 5.  Graficar funciones", 0dh, 0ah
+                    db " 6.  Reporte", 0dh, 0ah
+                    db " 7.  Modo calculadora", 0dh, 0ah
+                    db " 8.  Salir", 0dh, 0ah,"$"
+choose              db " Elija una opci", 0a2h ,"n: $"
+chooseWrong         db " Opci", 0a2h ,"n no v",0a0h,"lida$"
 chooseH             db 50 dup(00h)
 choose1             db "1$"
 choose2             db "2$"
@@ -63,7 +64,6 @@ funcIsDev           db 0b3h, " Derivada de la funci", 0a2h ,"n:$"
 funcIsInt           db 0b3h, " Integral de la funci", 0a2h ,"n:$"
 funcOnMemf          db 5 dup(00h)
 funcOnMemd          db 5 dup(00h)
-funcOnMemi          db 5 dup(00h)
 funcIntCte          db ?
 funcThereIsF        db 0
 funcOriginal        db " f(x) = $"
@@ -106,6 +106,10 @@ main proc
     mov ds, ax
     mainGetUserOp:
         clearScreen ;limpia la pantalla
+        printChar 0dah
+        printCharTimes 0c4h, 4dh
+        printChar 0bfh
+        printStrln ln
         printStrln mainMenu ;imprime el encabezado
         printStr choose ;imprime una decisión
         flushStr chooseH, 50, 00H ;limpia la entrada del usuario
@@ -234,22 +238,14 @@ enterFunction proc
     EndEnter:
         xor si, si
         xor cx, 05h
-        _enterCreateDevInt:
+        _enterSetDerivate:
             mov al, cl ;mueve el contado actual 
             dec al     ;resta uno
             mov bl, funcOnMemf[si] ;mete coef
             imul bl     ;multiplica
             mov funcOnMemd[si], al ;almacena el coef de derivada
-            jnz _enterCreateDevInt1 ;si no es cero almacena cl
-            mov funcOnMemi[si], 00h
-            jmp _enterCreateDevInt2
-            _enterCreateDevInt1:
-                mov funcOnMemi[si], cl
-            _enterCreateDevInt2:
-                inc si
-                dec cx
-                cmp cl, 00h
-                jnz _enterCreateDevInt
+            inc si
+            loop _enterSetDerivate
         mov funcThereIsF, 01h
         mov funcfX[12h], '4'
         pauseAnyKey
@@ -317,7 +313,6 @@ showFunction proc
         printCharTimes 0c4h, 4eh
         printStrln ln
         printStrln ln
-        pauseAnyKey
         pop si
         pop cx
         ret
@@ -325,6 +320,8 @@ showFunction endp
 
 ;------------------------------------------------------------------
 showDevFunction proc
+; Imprime consecutivamente la información de funcOnMemD
+;------------------------------------------------------------------
     push ax
     push bx
     push cx
@@ -392,7 +389,6 @@ showDevFunction proc
                 dec cx
                 cmp cl, 00h
                 jnz _showDevPrint
-    _showDevFunctionEnd:
         printStrln ln
         printChar 0c0h
         printCharTimes 0c4h, 4eh
@@ -405,10 +401,92 @@ showDevFunction proc
         pop ax    
         ret
 showDevFunction endp
-
+;------------------------------------------------------------------
 showIntFunction proc
+; Imprime consecutivamente la información de funOnMemf
+; junto con eso imprime la forma correcta de los coeficientes
+; en una integral
+;------------------------------------------------------------------
+    push ax
+    push bx
+    push cx
+    push si
+    printChar 0dah
+    printCharTimes 0c4h, 4eh
+    printStrln ln
+    printStrln funcIsInt
+    printStrln operInfo2
+    printStr operInfo2
+    printStr functegral
+    xor ax, ax
+    xor bx, bx
+    xor cx, cx
+    xor si, si
+    mov cl, 05h
+    _showIFMain:
+        cmp funcOnMemf[si], 00h ;no imprime los coeficientes 0
+        jz _showIFMainIncSi     ;se salta todo el proc e inc si
+        mov al, funcOnMemf[si]
+        rol al, 01h
+        ror al, 01h
+        jc _showIFNeg
+        printChar '+'            ;imprime el signo más
+        jmp _showIFNumber
+        _showIFNeg:
+            neg al
+            printChar '-'
+        _showIFNumber:
+            printChar 20h        ;imprime un espacio
+            add al, '0'
+            printChar al         ;imprime el numerador
+            cmp cx, 01h          ;si es 1 no imprime 1/1 x solo 1x
+            jz _showIFX
+            mov al, cl           ;prepara el denominador
+            add al, '0'             
+            printChar '/'     
+            printChar al         ;imprime el denominador  
+        _showIFX:
+            printChar 0fah
+            printChar 'x' 
+            cmp cx, 01h          ;no imprime x1, solo x
+            jz _showIFMainIncSi
+            printChar al
+            printChar 20h        ;imprime un espacio
+        _showIFMainIncSi:
+            inc si
+            dec cx
+            cmp cl, 00
+            jnz _showIFMain
+    printChar 20h
+    printChar '+'
+    printChar 20h
+    printChar 'c'
+    printStrln ln
+    printChar 0c0h
+    printCharTimes 0c4h, 4eh
+    printStrln ln
+    printStrln ln
+    pauseAnyKey
+    pop si
+    pop cx
+    pop bx
+    pop ax
     ret
 showIntFunction endp
+
+
+genReport proc
+    push ax
+    push bx
+    push cx
+    push si
+    
+
+    pop si
+    pop cx
+    pop bx
+    pop ax
+genReport endp
 
 ;------------------------------------------------------------------
 calculatorMode proc
