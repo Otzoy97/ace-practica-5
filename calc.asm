@@ -85,12 +85,15 @@ LOCAL _vNLoop, _vNLoop1S, _vNLoop1SM, _vNLoop1SP, _vNLoop2S, _vNErr, _vNEnd
         neg ax
     .endif
     mov temp , ax
+    mov bl, 01h
+    cmp bl, 00h
     jmp _vNEnd
     _vNErr:
         printStr illegalCharOnFile
         printChar charArr[si]
         printStrln ln
         xor ax, ax
+        mov bl, 00h
+        cmp bl, 00h
     _vNEnd:
-        cmp ax, 00h
 endm

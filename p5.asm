@@ -80,10 +80,14 @@ graphMenu           db 0ah, "     GRAFICAR FUNCIONES", 0dh, 0ah
                     db " 4.  Regresar$"
 graphfrom           db " Ingrese el valor inicial de intervalo: $"
 graphto             db " Ingrese el valor final de intervalo: $"
+graphint            db " Ingrese el valor de la constante: $"
+graphWRange         db " El valor inicial debe ser menor que el valor final del intervalo$"
 xAxisfrom           dw 0
 aea1                db '$'
 xAxisto             dw 0
 aea2                db '$'
+cteInt              dw 0
+aea3                db '$'
 ;------------------------------------------------------------------
 ; CALCULADORA  
 postFixOper         db 66 dup(00h)
@@ -559,8 +563,9 @@ menuPlotFunction proc
         mov xAxisto, 0
         validateNumber chooseh, xAxisto
         je _plotWrong
-        printStrln xAxisfrom
-        printStrln xAxisto
+        mov ax, xAxisto
+        cmp xAxisfrom, ax
+        jg _plotWrongRange
         ;call  plotOriginalF
         pauseAnyKey
         jmp _mainMenuPlotFunction
@@ -581,8 +586,9 @@ menuPlotFunction proc
         mov xAxisto, 0
         validateNumber chooseh, xAxisto
         je _plotWrong
-        printStrln xAxisfrom
-        printStrln xAxisto
+        mov ax, xAxisto
+        cmp xAxisfrom, ax
+        jg _plotWrongRange
         ;call  plotOriginalF
         pauseAnyKey
         jmp _mainMenuPlotFunction
@@ -603,12 +609,27 @@ menuPlotFunction proc
         mov xAxisto, 0
         validateNumber chooseh, xAxisto
         je _plotWrong
-        printStrln xAxisfrom
-        printStrln xAxisto
+        ;solicita al usuario el valor de la constante
+        printStr graphint
+        flushStr chooseh, 50, 00H
+        getLine chooseh
+        ;valida que sea un número
+        mov cteInt, 0
+        validateNumber chooseh, cteInt
+        je _plotWrong
+        mov ax, xAxisto
+        cmp xAxisfrom, ax
+        jg _plotWrongRange
         ;call  plotOriginalF
         pauseAnyKey
         jmp _mainMenuPlotFunction
     _plotWrong:
+        pauseAnyKey
+        clearScreen
+        jmp _mainMenuPlotFunction
+    _plotWrongRange:
+        printStrln graphWRange
+        printStrln ln
         pauseAnyKey
         clearScreen
         jmp _mainMenuPlotFunction
@@ -620,10 +641,10 @@ menuPlotFunction proc
 menuPlotFunction endp
 
 ;------------------------------------------------------------------
-plotFunction proc
-;     
+plotOFunction proc
+   mov ax, xAxisfrom
 
-plotFunction endp
+plotOFunction endp
 
 ;------------------------------------------------------------------
 genReport proc
