@@ -1,11 +1,10 @@
+.model small
+.386
+.stack
 include stringH.asm
 include fileH.asm
 include screenH.asm
 include calc.asm
-
-.model small
-.386
-.stack
 .data
 ln                  db '$'
 pressanykey         db "Presione cualquier tecla para continuar...$"
@@ -170,7 +169,11 @@ main proc
     mainGraphFunction:
         clearScreen
         cmp funcThereIsF, 00h
-        jz mainMsgThereIsNoFunction
+        jz mainMsgThereIsNoFunction        
+        videoModeOn
+        setupScreen
+        pauseAnyKeyVideo
+        textModeOn
         jmp mainGetUserOp
     mainGenRep:  
         clearScreen
@@ -195,6 +198,7 @@ main proc
         pauseAnyKey
         jmp mainGetUserOp
     EndMain:
+        clearScreen
         mov ax, 4C00H
         int 21H
 main endp
