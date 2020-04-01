@@ -116,7 +116,8 @@ fxDerivada          db "                                   ", 0ah, 0ah ;35 para 
 reportIntegral      db "Funci", 0f3h, "n integral", 0ah
                     db "F(x) = "
 fxIntegral          db "                                              $" ;46 para limpiar
-reportName          db "p5RepA.txt", 00h ;5 para reporte
+reportGenerMsg      db 0b3h, " Reporte generado:                                                           ", 0b3h, "$"
+reportName          db "p5RepA.txt", 00h,"                                                              " ,0b3h, "$" ;5 para reporte
 buffer   DB 100 dup (?), '$'
 .code
 main proc
@@ -187,6 +188,7 @@ main proc
         cmp funcThereIsF, 00h
         jz mainMsgThereIsNoFunction
         call genReport
+        pauseAnyKey
         jmp mainGetUserOp
     mainCalcMode:
         call calculatorMode
@@ -808,6 +810,18 @@ genReport proc
         contarRep reportHeader
         writeFile fileHandler, reportHeader, si
         closeFile fileHandler
+        printChar 0dah
+        printCharTimes 0c4h, 4dh
+        printChar 0bfh
+        printStrln ln
+        printStrln reportGenerMsg
+        printStr operInfo2
+        printStrln reportName
+        ;printStrln ln
+        printChar 0c0h
+        printCharTimes 0c4h, 4dh
+        printChar 0d9h
+        printStrln ln
         inc reportName[5]
     pop di
     pop si
