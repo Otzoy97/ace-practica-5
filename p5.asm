@@ -80,8 +80,10 @@ graphMenu           db 0ah, "     GRAFICAR FUNCIONES", 0dh, 0ah
                     db " 4.  Regresar$"
 graphfrom           db " Ingrese el valor inicial de intervalo: $"
 graphto             db " Ingrese el valor final de intervalo: $"
-xAxisfrom           db ?
-xAxisto           db ?
+xAxisfrom           dw 0
+aea1                db '$'
+xAxisto             dw 0
+aea2                db '$'
 ;------------------------------------------------------------------
 ; CALCULADORA  
 postFixOper         db 66 dup(00h)
@@ -115,7 +117,7 @@ reportIntegral      db "Funci", 0f3h, "n integral", 0ah
                     db "F(x) = "
 fxIntegral          db "                                              $" ;46 para limpiar
 reportName          db "p5RepA.txt", 00h ;5 para reporte
-
+buffer   DB 100 dup (?), '$'
 .code
 main proc
     mov ax, @data
@@ -539,51 +541,69 @@ menuPlotFunction proc
         pauseAnyKey 
         jmp _mainMenuPlotFunction ;regresa al main
     _plotOriginal:
+        ;solicita al usuario el rango inferior
         printStr graphfrom
         flushStr chooseh, 50, 00h
         getLine chooseh 
-        validateNumber chooseh
-        jz _plotWrong
-        mov xAxisfrom, al
+        ;valida que sea un número
+        mov xAxisfrom, 0
+        validateNumber chooseh, xAxisfrom
+        je _plotWrong
+        ;solicita al usuario el rango superior
         printStr graphto
         flushStr chooseh, 50, 00h
         getLine chooseh
-        validateNumber chooseh
-        jz _plotWrong
-        mov xAxisto, al
+        ;valida que sea un número
+        mov xAxisto, 0
+        validateNumber chooseh, xAxisto
+        je _plotWrong
+        printStrln xAxisfrom
+        printStrln xAxisto
         ;call  plotOriginalF
         pauseAnyKey
         jmp _mainMenuPlotFunction
     _plotDerivada:
+        ;solicita al usuario el rango inferior
         printStr graphfrom
         flushStr chooseh, 50, 00h
         getLine chooseh 
-        validateNumber chooseh
-        jz _plotWrong
-        mov xAxisfrom, al
+        ;valida que sea un número
+        mov xAxisfrom, 0
+        validateNumber chooseh, xAxisfrom
+        je _plotWrong
+        ;solicita al usuario el rango superior
         printStr graphto
         flushStr chooseh, 50, 00h
         getLine chooseh
-        validateNumber chooseh
-        jz _plotWrong   
-        mov xAxisto, al 
-        ;call  plotOriginalD
+        ;valida que sea un número
+        mov xAxisto, 0
+        validateNumber chooseh, xAxisto
+        je _plotWrong
+        printStrln xAxisfrom
+        printStrln xAxisto
+        ;call  plotOriginalF
         pauseAnyKey
         jmp _mainMenuPlotFunction
     _plotIntegral:
+        ;solicita al usuario el rango inferior
         printStr graphfrom
         flushStr chooseh, 50, 00h
         getLine chooseh 
-        validateNumber chooseh
-        jz _plotWrong
-        mov xAxisfrom, al
+        ;valida que sea un número
+        mov xAxisfrom, 0
+        validateNumber chooseh, xAxisfrom
+        je _plotWrong
+        ;solicita al usuario el rango superior
         printStr graphto
         flushStr chooseh, 50, 00h
         getLine chooseh
-        validateNumber chooseh
-        jz _plotWrong
-        mov xAxisto, al 
-        ;call  plotOriginalI
+        ;valida que sea un número
+        mov xAxisto, 0
+        validateNumber chooseh, xAxisto
+        je _plotWrong
+        printStrln xAxisfrom
+        printStrln xAxisto
+        ;call  plotOriginalF
         pauseAnyKey
         jmp _mainMenuPlotFunction
     _plotWrong:
