@@ -73,11 +73,15 @@ functegral          db " F(x) = $"
 funcxDExist         db 0b3h, " No hay funci", 0a2h, "n en memoria                                                   ", 0b3h, "$"
 ;------------------------------------------------------------------
 ; GRAFICAR FUNCION
-graphMenu           db "     GRAFICAR FUNCIONES", 0dh, 0ah
+graphMenu           db 0ah, "     GRAFICAR FUNCIONES", 0dh, 0ah
                     db " 1.  Graficar original f(x)", 0dh, 0ah
                     db " 2.  Graficar derivada f'(x)", 0dh, 0ah
                     db " 3.  Graficar integral F(x)", 0dh, 0ah
                     db " 4.  Regresar$"
+graphfrom           db " Ingrese el valor inicial de intervalo: $"
+graphto             db " Ingrese el valor final de intervalo: $"
+xAxisfrom           db ?
+xAxisto           db ?
 ;------------------------------------------------------------------
 ; CALCULADORA  
 postFixOper         db 66 dup(00h)
@@ -170,10 +174,11 @@ main proc
         clearScreen
         cmp funcThereIsF, 00h
         jz mainMsgThereIsNoFunction        
-        videoModeOn
-        setupScreen
-        pauseAnyKeyVideo
-        textModeOn
+        call menuPlotFunction
+        ;videoModeOn
+        ;setupScreen
+        ;pauseAnyKeyVideo
+        ;textModeOn
         jmp mainGetUserOp
     mainGenRep:  
         clearScreen
@@ -226,7 +231,7 @@ enterFunction proc
         _enterFCoefPosNull:
             cmp chooseH[di], 00h ;verifica que no sea nulo
             je _enterFCoefWrong ;salta a indicar que es un error
-            cmp bh, 00h ;verifica si bl es 0
+            cmp bl, 00h ;verifica si bl es 0
             je _enterFCoefSignFlow 
         _enterFCoefNumber1:
             cmp chooseH[di], '0'
@@ -509,6 +514,94 @@ showIntFunction proc
     pop ax
     ret
 showIntFunction endp
+
+menuPlotFunction proc
+    push ax
+    push bx
+    push si
+    push cx
+    _mainMenuPlotFunction:
+        clearScreen
+        printStrln graphMenu
+        printStrln ln
+        printStr choose
+        flushStr chooseH, 50, 00H
+        getLine chooseH
+        compareStr chooseH, choose1 ;graficar original
+        je _plotOriginal
+        compareStr chooseH, choose2 ;graficar derivada
+        je _plotDerivada
+        compareStr chooseH, choose3 ;graficar integral
+        je _plotIntegral
+        compareStr chooseH, choose4 ;regresar al menú principal
+        je _plotEnd
+        printStrln chooseWrong ;no es una opción válida
+        pauseAnyKey 
+        jmp _mainMenuPlotFunction ;regresa al main
+    _plotOriginal:
+        printStr graphfrom
+        flushStr chooseh, 50, 00h
+        getLine chooseh 
+        validateNumber chooseh
+        jz _plotWrong
+        mov xAxisfrom, al
+        printStr graphto
+        flushStr chooseh, 50, 00h
+        getLine chooseh
+        validateNumber chooseh
+        jz _plotWrong
+        mov xAxisto, al
+        ;call  plotOriginalF
+        pauseAnyKey
+        jmp _mainMenuPlotFunction
+    _plotDerivada:
+        printStr graphfrom
+        flushStr chooseh, 50, 00h
+        getLine chooseh 
+        validateNumber chooseh
+        jz _plotWrong
+        mov xAxisfrom, al
+        printStr graphto
+        flushStr chooseh, 50, 00h
+        getLine chooseh
+        validateNumber chooseh
+        jz _plotWrong   
+        mov xAxisto, al 
+        ;call  plotOriginalD
+        pauseAnyKey
+        jmp _mainMenuPlotFunction
+    _plotIntegral:
+        printStr graphfrom
+        flushStr chooseh, 50, 00h
+        getLine chooseh 
+        validateNumber chooseh
+        jz _plotWrong
+        mov xAxisfrom, al
+        printStr graphto
+        flushStr chooseh, 50, 00h
+        getLine chooseh
+        validateNumber chooseh
+        jz _plotWrong
+        mov xAxisto, al 
+        ;call  plotOriginalI
+        pauseAnyKey
+        jmp _mainMenuPlotFunction
+    _plotWrong:
+        pauseAnyKey
+        clearScreen
+        jmp _mainMenuPlotFunction
+    _plotEnd:
+    pop cx
+    pop si
+    pop bx
+    pop ax
+menuPlotFunction endp
+
+;------------------------------------------------------------------
+plotFunction proc
+;     
+
+plotFunction endp
 
 ;------------------------------------------------------------------
 genReport proc
