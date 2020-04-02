@@ -577,7 +577,6 @@ menuPlotFunction proc
         call setRatioOF
         ;printStrln ratioGraph
         call plotOriginalF
-        pauseAnyKey
         jmp _mainMenuPlotFunction
     _plotDerivada:
         ;solicita al usuario el rango inferior
@@ -601,7 +600,6 @@ menuPlotFunction proc
         jge _plotWrongRange
         call setRatioDF
         call  plotOriginalD
-        pauseAnyKey
         jmp _mainMenuPlotFunction
     _plotIntegral:
         ;solicita al usuario el rango inferior
@@ -632,8 +630,7 @@ menuPlotFunction proc
         cmp xAxisfrom, ax
         jge _plotWrongRange
         call setRatioIF
-        ;call  plotOriginalF
-        pauseAnyKey
+        call plotOriginalI
         jmp _mainMenuPlotFunction
     _plotWrong:
         pauseAnyKey
@@ -1403,7 +1400,7 @@ plotOriginalF proc
             ;se deberá pintar
             xor ecx, ecx
             movsx ecx, xAxisfrom
-            sub ecx, 159
+            add ecx, 159
             printPixelOn 
             _plotOFIncFrom:
                 inc xAxisfrom
@@ -1413,7 +1410,6 @@ plotOriginalF proc
         textModeOn
         ret
 plotOriginalF endp
-
 
 ;------------------------------------------------------------------
 plotOriginalD proc
@@ -1425,7 +1421,7 @@ plotOriginalD proc
     ;inicia el modo video
     videoModeOn
     setupScreen
-    _plotOFPlot:
+    _plotOFPlotD:
         ;limpia el acumulador
         xor eax, eax
         ;limpia los datos
@@ -1440,7 +1436,7 @@ plotOriginalD proc
         cmp eax, ebx
         ;si xAxisfrom es mayor a xAxisto 
         ;termina el proceso
-        jg _plotOFEnd
+        jg _plotOFEndD
 
         ;mueve la constante
         movsx ecx, funcOnMemD[3]
@@ -1496,7 +1492,7 @@ plotOriginalD proc
         mov ebx, ratioGraph
         ;determina si es menor a 0
         cmp eax, 0
-        jge _plotOFNoCarry
+        jge _plotOFNoCarryD
             ;niega acx
             neg eax
             ;extiende el signo
@@ -1512,9 +1508,9 @@ plotOriginalD proc
             ;se asegura que el resultado no sea
             ;mayor a 199
             cmp edx, 199
-            jg _plotOFIncFrom
-            jmp _plotOFPrintPixel
-        _plotOFNoCarry:
+            jg _plotOFIncFromD
+            jmp _plotOFPrintPixelD
+        _plotOFNoCarryD:
             ;extiende el signo
             xor edx, edx
             cdq
@@ -1530,22 +1526,220 @@ plotOriginalD proc
             mov edx, ebx
             cmp edx, 0
             ;si es menor a 0 no pinta pixel
-            jl _plotOFIncFrom
-        _plotOFPrintPixel: 
+            jl _plotOFIncFromD
+        _plotOFPrintPixelD: 
             ;especifica la columna en donde
             ;se deberá pintar
             xor ecx, ecx
             movsx ecx, xAxisfrom
-            sub ecx, 159
-            printPixelOn 
-            _plotOFIncFrom:
+            add ecx, 159
+            printPixelOn
+            _plotOFIncFromD:
                 inc xAxisfrom
-                jmp _plotOFPlot
-    _plotOFEnd:
+                jmp _plotOFPlotD
+    _plotOFEndD:
         pauseAnyKeyVideo
         textModeOn
         ret
 plotOriginalD endp
+
+;------------------------------------------------------------------
+plotOriginalI proc
+; recupera el valor de x
+; se eleva a la n potencia
+; se multiplica con el coef de la función
+; se suma con el resultado previo
+;------------------------------------------------------------------
+    ;inicia el modo video
+    videoModeOn
+    setupScreen
+    _plotOFPlotI:
+        ;limpia el acumulador
+        xor eax, eax
+        ;limpia los datos
+        xor edx, edx
+        ;limpia el contador
+        xor ecx, ecx
+        ;limpia el indice base
+        xor ebx, ebx
+        ;mueve el axisfrom
+        movsx eax, xAxisfrom
+        movsx ebx, xAxisto
+        cmp eax, ebx
+        ;si xAxisfrom es mayor a xAxisto 
+        ;termina el proceso
+        jg _plotOFEndI
+
+        ;mueve la constante
+        movsx ecx, funcIntCte
+
+        ;----------x5
+        ;copia xaxisfrom a ebx
+        xor ebx, ebx
+        xor eax, eax
+        movsx ebx, xAxisfrom
+        mov eax, ebx
+        ;potencia 5
+        imul ebx
+        imul ebx
+        imul ebx
+        imul ebx   
+        ;lo multiplica por el coef
+        xor ebx, ebx
+        movsx ebx, funcOnMemf[0]
+        imul ebx
+        ;lo divide entre 5
+        xor ebx, ebx
+        xor edx, edx
+        mov ebx, 5
+        ;extiende el signo a edx
+        cdq
+        idiv ebx
+        ;suma el cociente
+        add ecx, eax
+
+        ;----------x4
+        ;copia xaxisfrom a ebx
+        xor eax, eax
+        xor ebx, ebx
+        xor edx, edx
+        movsx ebx, xAxisfrom
+        mov eax, ebx
+        ;potencia 4
+        imul ebx
+        imul ebx
+        imul ebx
+        ;lo multiplica por el coef
+        xor ebx, ebx
+        movsx ebx, funcOnMemf[1]
+        imul ebx
+        ;lo divide entre 4
+        xor ebx, ebx
+        xor edx, edx
+        mov ebx, 4
+        ;extiende el signo edx
+        cdq
+        idiv ebx
+        ;suma el cociente
+        add ecx, eax
+
+        ;----------x3
+        ;copia xaxisfrom a ebx
+        xor eax, eax
+        xor ebx, ebx
+        xor edx, edx
+        movsx ebx, xAxisfrom
+        mov eax, ebx
+        ;potencia 3
+        imul ebx
+        imul ebx
+        ;lo multiplica por el coef
+        xor ebx, ebx
+        movsx ebx, funcOnMemf[2]
+        imul ebx
+        ;lo divide dentro de tres
+        xor edx, edx
+        xor ebx, ebx
+        mov ebx, 3
+        ;extiende el signo de eax
+        cdq
+        idiv ebx    
+        ;suma el cociente
+        add ecx, eax
+
+        ;----------x2
+        ;copia xaxisfrom a ebx
+        xor eax, eax
+        xor edx, edx
+        xor ebx, ebx
+        movsx eax, xAxisfrom
+        mov ebx, eax
+        ;potencia 2
+        imul ebx
+        ;lo multiplica por el coef
+        xor ebx, ebx
+        movsx ebx, funcOnMemf[3]
+        imul ebx
+        ;lo divide dentro de dos
+        xor ebx, ebx
+        xor edx, edx
+        mov ebx, 2
+        ;extiende el signo a edx
+        cdq
+        idiv ebx
+        ;suma el cociente
+        add ecx, eax
+
+        ;----------x1
+        ;copia xaxisfrom a ebx
+        xor eax, eax
+        xor edx, edx
+        xor ebx, ebx
+        movsx eax, xAxisfrom
+        movsx ebx, funcOnMemf[4]
+        ;lo multiplica por el coef
+        imul ebx
+        ;suma el producto
+        add ecx, eax
+
+        ;especifica la fila en donde estará
+        ;mueve ecx a eax
+        mov eax, ecx
+        ;prepara la división con ratioGraph
+        xor ebx, ebx
+        mov ebx, ratioGraph
+        ;determina si es menor a 0
+        cmp eax, 0
+        jge _plotOFNoCarryI
+            ;niega acx
+            neg eax
+            ;extiende el signo
+            xor edx, edx
+            cdq
+            ;divide dentro de ratioGraph
+            div ebx
+            ;al resultado (eax) le suma 99
+            add eax, 99
+            ;mueve el resultado a edx
+            xor edx, edx
+            mov edx, eax
+            ;se asegura que el resultado no sea
+            ;mayor a 199
+            cmp edx, 199
+            jg _plotOFIncFromI
+            jmp _plotOFPrintPixelI
+        _plotOFNoCarryI:
+            ;extiende el signo
+            xor edx, edx
+            cdq
+            ;divide dentro de ratio
+            div ebx
+            ;prepara la resta
+            xor ebx, ebx
+            mov ebx, 99
+            ;resta el contenido de eax a ebx (99 - y/ratioGraph)
+            sub ebx, eax
+            ;mueve el resultao a edx
+            xor edx, edx
+            mov edx, ebx
+            cmp edx, 0
+            ;si es menor a 0 no pinta pixel
+            jl _plotOFIncFromI
+        _plotOFPrintPixelI: 
+            ;especifica la columna en donde
+            ;se deberá pintar
+            xor ecx, ecx
+            movsx ecx, xAxisfrom
+            add ecx, 159
+            printPixelOn 
+            _plotOFIncFromI:
+                inc xAxisfrom
+                jmp _plotOFPlotI
+    _plotOFEndI:
+        pauseAnyKeyVideo
+        textModeOn
+        ret
+plotOriginalI endp
 
 ;------------------------------------------------------------------
 genReport proc
