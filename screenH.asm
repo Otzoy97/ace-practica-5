@@ -63,14 +63,14 @@ LOCAL _1, _2, _3
     xor ax, ax
     mov ax, 000ah   ; color verde claro
     mov cx, 200   ; 200 lineas
-    mov di, 158   ; empieza en 159
+    mov di, 159   ; empieza en 159
     _2:
         mov [di], ax
         add di, 320
         loop _2
     ;pinta el eje x
     xor di, di
-    mov di, 7bc0h   ; 99 eje x
+    mov di, 7a80h   ; 99 eje x
     mov cx, 140h    ; 320 columnas
     _3:
         mov [di], ax

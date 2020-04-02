@@ -1402,7 +1402,7 @@ plotOriginalF proc
             ;especifica la columna en donde
             ;se deberá pintar
             xor ecx, ecx
-            mov ecx, xAxisfrom
+            movsx ecx, xAxisfrom
             sub ecx, 159
             printPixelOn 
             _plotOFIncFrom:
