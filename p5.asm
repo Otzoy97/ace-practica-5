@@ -87,7 +87,7 @@ xAxisfrom           dw 0
 xAxisto             dw 0
 ;aea2                db '$'
 cteInt              dw 0
-ratioGraph          dd 1
+ratioGraph          dd 0
 aea3                db '$'
 ;------------------------------------------------------------------
 ; CALCULADORA  
@@ -570,11 +570,12 @@ menuPlotFunction proc
         mov xAxisto, 0
         validateNumber chooseh, xAxisto
         je _plotWrong
+        ;valida que sea mayor
         mov ax, xAxisto
         cmp xAxisfrom, ax
-        jg _plotWrongRange
+        jge _plotWrongRange
         call setRatioOF
-        printStrln ratioGraph
+        ;printStrln ratioGraph
         ;call plotOriginalF
         pauseAnyKey
         jmp _mainMenuPlotFunction
@@ -597,7 +598,8 @@ menuPlotFunction proc
         je _plotWrong
         mov ax, xAxisto
         cmp xAxisfrom, ax
-        jg _plotWrongRange
+        jge _plotWrongRange
+        call setRatioDF
         ;call  plotOriginalF
         pauseAnyKey
         jmp _mainMenuPlotFunction
@@ -628,7 +630,7 @@ menuPlotFunction proc
         je _plotWrong
         mov ax, xAxisto
         cmp xAxisfrom, ax
-        jg _plotWrongRange
+        jge _plotWrongRange
         ;call  plotOriginalF
         pauseAnyKey
         jmp _mainMenuPlotFunction
@@ -715,7 +717,7 @@ setRatioOF proc
     imul ebx
     ;almacena el resultado en dx
     add ecx, eax
-    
+
     push ecx
 
     xor ecx, ecx
@@ -809,25 +811,178 @@ setRatioOF proc
     ;mantiene el resultado en ax
 
     ;determina cual es más grande
-    .if (eax < ebx)
-        ;si ax es menor, entonces
-        ;ax se sobreescribe
+    cmp eax, ebx
+    jae _ratioDiv
+        ;ebx es más grande
         mov eax, ebx
-    .endif
+    _ratioDiv:
+        xor edx, edx
+        mov ebx, 64h
+        cdq
+        div ebx
+    mov ratioGraph, eax
+    cmp eax, 2
+    jae _ratioEnd
+        ;eax es menor a 2
+        mov ratioGraph, 1
+    _ratioEnd:
+    printBCD ratioGraph
+    printChar 0ah
+    printChar 0dh
+        ret 
+setRatioOF endp
+
+;------------------------------------------------------------------
+setRatioDF proc
+; Obtiene los puntos de los límites de la función dados por 
+; xAxisfrom y xAxisto, determina cual es más grande,
+; divide el mayor entre 200, el resultado es la escala a tomar 
+; para graficar
+;------------------------------------------------------------------
+    ;----------x0
+    movsx ecx, funcOnMemd[3]
+    ;----------x3
+    ;copia el valor de al a bl
+    xor ebx, ebx
+    xor eax, eax
+    movsx ebx, xAxisfrom
+    mov eax, ebx
+    ;potencia 3
+    imul ebx
+    imul ebx
+    ;lo multiplica por el coef
+    xor ebx, ebx
+    movsx ebx, funcOnMemd[0]
+    imul ebx
+    ;almacena el resultado en ecx
+    add ecx, eax
+
+    ;----------x2
+    ;copia el valor de bx a ax
+    xor ebx, ebx
+    xor eax, eax
+    movsx ebx, xAxisfrom
+    mov eax, ebx
+    ;potencia 2
+    imul ebx
+    ;lo multiplica por el coef
+    xor ebx, ebx
+    movsx ebx, funcOnMemd[1]
+    imul ebx
+    ;almacena el resultado en ecx
+    add ecx, eax
+
+    ;----------x1
+    ;copia el valor de ax a bx
+    xor ebx, ebx
+    xor eax, eax
+    movsx ebx, xAxisfrom
+    mov eax, ebx
+    ;lo multiplica por el coef
+    xor ebx, ebx
+    movsx ebx, funcOnMemd[2]
+    imul ebx
+    ;almacena el resultado en ecx
+    add ecx, eax
+
+    push ecx
+
+    xor ecx, ecx
+
+    ;----------x0
+    movsx cx, funcOnMemd[3]
+
+    ;----------x3
+    ;copia el valor de bx a ax
+    xor ebx, ebx
+    xor eax, eax
+    movsx ebx, xAxisto
+    mov eax, ebx
+    ;potencia 3
+    imul ebx
+    imul ebx
+    ;lo multiplica por el coef
+    xor ebx, ebx
+    movsx ebx, funcOnMemd[0]
+    imul ebx
+    ;almacena el resultado en ecx
+    add ecx, eax
+
+    ;----------x2
+    ;copia el valor de bx a ax
+    xor ebx, ebx
+    xor eax, eax
+    movsx ebx, xAxisto
+    mov eax, ebx
+    ;potencia 2
+    imul ebx
+    ;lo multiplica por el coef
+    xor ebx, ebx
+    movsx ebx, funcOnMemd[1]
+    imul ebx
+    ;almacena el resultado en ecx
+    add ecx, eax
+
+    ;----------x1
+    ;copia el valor de ax a bx
+    xor ebx, ebx
+    xor eax, eax
+    movsx ebx, xAxisto
+    mov eax, ebx
+    ;lo multiplica por el coef
+    xor ebx, ebx
+    movsx ebx, funcOnMemd[2]
+    imul ebx
+    ;almacena el resultado en ecx
+    add ecx, eax ;(xAxisto)
+
+    ;mueve ecx a eax
+    mov eax, ecx
+    ;limpia edx
+    xor edx, edx
+    ;extiende el signo
+    cdq
+    ;recupera su valor absoluto
+    xor eax, edx
+    sub eax, edx
+
+    ;mueve el resultado a bx
+    mov ebx, eax
+
+    ;recupera el resultado pop
+    pop eax
     ;limpia dx
     xor edx, edx
     ;extiende el signo de ax
     cdq
-    mov ebx, 100
-    div ebx
-    ;si ax es cero entonces ratioGraph es 01
-    .if (eax == 0)
+    ;recupera su valor absoluto
+    xor eax, edx
+    sub eax, edx
+    ;mantiene el resultado en ax
+
+    ;determina cual es más grande
+    cmp eax, ebx
+    jae _ratioDivDev
+        ;ebx es más grande
+        mov eax, ebx
+    _ratioDivDev:
+        xor edx, edx
+        mov ebx, 64h
+        cdq
+        div ebx
+    mov ratioGraph, eax
+    cmp eax, 2
+    jae _ratioEndDev
+        ;eax es menor a 2
         mov ratioGraph, 1
-    .else
-        mov ratioGraph, eax ;almacena el radio
-    .endif 
-    ret
-setRatioOF endp
+    _ratioEndDev:
+    printBCD ratioGraph
+    printChar 0ah
+    printChar 0dh
+        ret 
+setRatioDF endp
+
+
 
 ;------------------------------------------------------------------
 plotOriginalF proc
