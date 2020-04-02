@@ -36,6 +36,10 @@ endm
 
 validateNumber macro charArr, temp
 LOCAL _vNLoop, _vNLoop1S, _vNLoop1SM, _vNLoop1SP, _vNLoop2S, _vNErr, _vNEnd
+    push si
+    push cx
+    push bx
+    push ax
     xor si, si
     xor cx, cx    
     xor bx, bx
@@ -96,6 +100,10 @@ LOCAL _vNLoop, _vNLoop1S, _vNLoop1SM, _vNLoop1SP, _vNLoop2S, _vNErr, _vNEnd
         mov bl, 00h
         cmp bl, 00h
     _vNEnd:
+        pop ax
+        pop bx
+        pop cx
+        pop si
 endm
 
 printBCD macro numero

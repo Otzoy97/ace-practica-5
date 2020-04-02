@@ -239,7 +239,7 @@ enterFunction proc
         _enterFCoefPosNull:
             cmp chooseH[di], 00h ;verifica que no sea nulo
             je _enterFCoefWrong ;salta a indicar que es un error
-            cmp bl, 00h ;verifica si bl es 0
+            cmp bh, 00h ;verifica si bl es 0
             je _enterFCoefSignFlow 
         _enterFCoefNumber1:
             cmp chooseH[di], '0'
