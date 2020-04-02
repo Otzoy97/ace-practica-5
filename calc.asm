@@ -97,3 +97,31 @@ LOCAL _vNLoop, _vNLoop1S, _vNLoop1SM, _vNLoop1SP, _vNLoop2S, _vNErr, _vNEnd
         cmp bl, 00h
     _vNEnd:
 endm
+
+printBCD macro numero
+LOCAL _1, _2
+    push eax
+    push ebx
+    push edx
+    push ecx
+    mov eax, numero
+    xor ecx, ecx
+    xor ebx, ebx
+    mov ebx, 0ah
+    _1:
+        cdq
+        div ebx
+        push edx
+        inc cx
+        cmp eax, 00H
+        jne _1
+    _2:
+        pop ebx
+        add ebx, '0'
+        printChar bl
+        loop _2
+    pop ecx
+    pop edx
+    pop ebx
+    pop eax
+endm
