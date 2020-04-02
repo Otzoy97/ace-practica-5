@@ -703,7 +703,9 @@ setRatioOF proc
     ;potencia 2
     imul ebx
     ;lo multiplica por el coef
-    imul funcOnMemf[2]
+    xor ebx, ebx
+    movsx ebx,funcOnMemf[2]
+    imul ebx
     ;almacena el resultado en dx
     add ecx, eax
 
@@ -982,7 +984,287 @@ setRatioDF proc
         ret 
 setRatioDF endp
 
+;------------------------------------------------------------------
+setRatioIF proc
+; Obtiene los puntos de los límites de la función dados por 
+; xAxisfrom y xAxisto, determina cual es más grande,
+; divide el mayor entre 200, el resultado es la escala a tomar 
+; para graficar
+;------------------------------------------------------------------
+    ;----------x0
+    movsx ecx, funcIntCte
 
+    ;----------x5
+    ;copia el valor de al a bl
+    xor ebx, ebx
+    xor eax, eax
+    movsx ebx, xAxisfrom
+    mov eax, ebx
+    ;potencia 5
+    imul ebx
+    imul ebx
+    imul ebx
+    imul ebx   
+    ;lo multiplica por el coef
+    xor ebx, ebx
+    movsx ebx, funcOnMemf[0]
+    imul ebx
+    ;lo divide entre 5
+    xor ebx, ebx
+    xor edx, edx
+    mov ebx, 5
+    ;extiende el signo a edx
+    cdq
+    idiv ebx
+    ;suma el cociente
+    add ecx, eax
+
+    ;----------x4
+    ;copia el valor de bx a ax
+    xor eax, eax
+    xor ebx, ebx
+    xor edx, edx
+    movsx ebx, xAxisfrom
+    mov eax, ebx
+    ;potencia 4
+    imul ebx
+    imul ebx
+    imul ebx
+    ;lo multiplica por el coef
+    xor ebx, ebx
+    movsx ebx, funcOnMemf[1]
+    imul ebx
+    ;lo divide entre 4
+    xor ebx, ebx
+    xor edx, edx
+    mov ebx, 4
+    ;extiende el signo edx
+    cdq
+    idiv ebx
+    ;suma el cociente
+    add ecx, eax
+
+    ;----------x3
+    ;copia el valor de bx a ax
+    xor eax, eax
+    xor ebx, ebx
+    xor edx, edx
+    movsx ebx, xAxisfrom
+    mov eax, ebx
+    ;potencia 3
+    imul ebx
+    imul ebx
+    ;lo multiplica por el coef
+    xor ebx, ebx
+    movsx ebx, funcOnMemf[2]
+    imul ebx
+    ;lo divide dentro de tres
+    xor edx, edx
+    xor ebx, ebx
+    mov ebx, 3
+    ;extiende el signo de eax
+    cdq
+    idiv ebx    
+    ;suma el cociente
+    add ecx, eax
+
+    ;----------x2
+    ;copia el valor de ax a bx
+    xor eax, eax
+    xor edx, dx
+    xor ebx, ebx
+    movsx eax, xAxisfrom
+    mov ebx, eax
+    ;potencia 2
+    imul ebx
+    ;lo multiplica por el coef
+    xor ebx, ebx
+    movsx ebx, funcOnMemf[3]
+    imul ebx
+    ;lo divide dentro de dos
+    xor ebx, ebx
+    xor edx, edx
+    mov ebx, 2
+    ;extiende el signo a edx
+    cdq
+    idiv ebx
+    ;suma el cociente
+    add ecx, eax
+
+    ;----------x1
+    ;copia el valor de ax a bx
+    xor eax, eax
+    xor edx, dx
+    xor ebx, ebx
+    movsx eax, xAxisfrom
+    movsx ebx, funcOnMemf[4]
+    ;lo multiplica por el coef
+    imul ebx
+    ;suma el producto
+    add ecx, eax
+
+    push ecx
+
+    xor ecx, ecx
+
+    ;----------x0
+    movsx ecx, funcIntCte
+
+    ;----------x5
+    ;copia el valor de al a bl
+    xor ebx, ebx
+    xor eax, eax
+    movsx ebx, xAxisto
+    mov eax, ebx
+    ;potencia 5
+    imul ebx
+    imul ebx
+    imul ebx
+    imul ebx   
+    ;lo multiplica por el coef
+    xor ebx, ebx
+    movsx ebx, funcOnMemf[0]
+    imul ebx
+    ;lo divide entre 5
+    xor ebx, ebx
+    xor edx, edx
+    mov ebx, 5
+    ;extiende el signo a edx
+    cdq
+    idiv ebx
+    ;suma el cociente
+    add ecx, eax
+
+    ;----------x4
+    ;copia el valor de bx a ax
+    xor eax, eax
+    xor ebx, ebx
+    xor edx, edx
+    movsx ebx, xAxisto
+    mov eax, ebx
+    ;potencia 4
+    imul ebx
+    imul ebx
+    imul ebx
+    ;lo multiplica por el coef
+    xor ebx, ebx
+    movsx ebx, funcOnMemf[1]
+    imul ebx
+    ;lo divide entre 4
+    xor ebx, ebx
+    xor edx, edx
+    mov ebx, 4
+    ;extiende el signo edx
+    cdq
+    idiv ebx
+    ;suma el cociente
+    add ecx, eax
+
+    ;----------x3
+    ;copia el valor de bx a ax
+    xor eax, eax
+    xor ebx, ebx
+    xor edx, edx
+    movsx ebx, xAxisto
+    mov eax, ebx
+    ;potencia 3
+    imul ebx
+    imul ebx
+    ;lo multiplica por el coef
+    xor ebx, ebx
+    movsx ebx, funcOnMemf[2]
+    imul ebx
+    ;lo divide dentro de tres
+    xor edx, edx
+    xor ebx, ebx
+    mov ebx, 3
+    ;extiende el signo de eax
+    cdq
+    idiv ebx    
+    ;suma el cociente
+    add ecx, eax
+
+    ;----------x2
+    ;copia el valor de ax a bx
+    xor eax, eax
+    xor edx, dx
+    xor ebx, ebx
+    movsx eax, xAxisto
+    mov ebx, eax
+    ;potencia 2
+    imul ebx
+    ;lo multiplica por el coef
+    xor ebx, ebx
+    movsx ebx, funcOnMemf[3]
+    imul ebx
+    ;lo divide dentro de dos
+    xor ebx, ebx
+    xor edx, edx
+    mov ebx, 2
+    ;extiende el signo a edx
+    cdq
+    idiv ebx
+    ;suma el cociente
+    add ecx, eax
+
+    ;----------x1
+    ;copia el valor de ax a bx
+    xor eax, eax
+    xor edx, dx
+    xor ebx, ebx
+    movsx eax, xAxisto
+    movsx ebx, funcOnMemf[4]
+    ;lo multiplica por el coef
+    imul ebx
+    ;suma el producto
+    add ecx, eax
+
+    
+    ;mueve dx a ax    
+    mov eax, ecx
+    ;limpia dx
+    xor edx, edx
+    ;extiende el signo
+    cdq
+    ;recupera su valor absoluto
+    xor eax, edx
+    sub eax, edx
+
+    ;mueve el resultado a bx
+    mov ebx, eax
+
+    ;recupera el resultado pop
+    pop eax
+    ;limpia dx
+    xor edx, edx
+    ;extiende el signo de ax
+    cdq
+    ;recupera su valor absoluto
+    xor eax, edx
+    sub eax, edx
+    ;mantiene el resultado en ax
+
+    ;determina cual es más grande
+    cmp eax, ebx
+    jae _ratioDiv
+        ;ebx es más grande
+        mov eax, ebx
+    _ratioDiv:
+        xor edx, edx
+        mov ebx, 64h
+        cdq
+        div ebx
+    mov ratioGraph, eax
+    cmp eax, 2
+    jae _ratioEnd
+        ;eax es menor a 2
+        mov ratioGraph, 1
+    _ratioEnd:
+    printBCD ratioGraph
+    printChar 0ah
+    printChar 0dh
+        ret 
+setRatioIF endp
 
 ;------------------------------------------------------------------
 plotOriginalF proc
