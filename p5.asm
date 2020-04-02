@@ -600,7 +600,7 @@ menuPlotFunction proc
         cmp xAxisfrom, ax
         jge _plotWrongRange
         call setRatioDF
-        ;call  plotOriginalF
+        call  plotOriginalD
         pauseAnyKey
         jmp _mainMenuPlotFunction
     _plotIntegral:
@@ -1413,6 +1413,139 @@ plotOriginalF proc
         textModeOn
         ret
 plotOriginalF endp
+
+
+;------------------------------------------------------------------
+plotOriginalD proc
+; recupera el valor de x
+; se eleva a la n potencia
+; se multiplica con el coef de la función
+; se suma con el resultado previo
+;------------------------------------------------------------------
+    ;inicia el modo video
+    videoModeOn
+    setupScreen
+    _plotOFPlot:
+        ;limpia el acumulador
+        xor eax, eax
+        ;limpia los datos
+        xor edx, edx
+        ;limpia el contador
+        xor ecx, ecx
+        ;limpia el indice base
+        xor ebx, ebx
+        ;mueve el axisfrom
+        movsx eax, xAxisfrom
+        movsx ebx, xAxisto
+        cmp eax, ebx
+        ;si xAxisfrom es mayor a xAxisto 
+        ;termina el proceso
+        jg _plotOFEnd
+
+        ;mueve la constante
+        movsx ecx, funcOnMemD[3]
+        
+        ;--------- x3
+        ;copia el valor de eax, a ebx
+        xor ebx, ebx
+        xor eax, eax
+        movsx eax, xAxisfrom
+        mov ebx, eax
+        ;potencia 3
+        imul ebx
+        imul ebx  
+        ;lo multiplica por el coef
+        xor ebx, ebx
+        movsx ebx, funcOnMemD[0]
+        imul ebx
+        ;suma el producto
+        add ecx, eax
+
+
+        ;--------- x2
+        ;copia el valor de eax, a ebx
+        xor ebx, ebx
+        xor eax, eax
+        movsx eax, xAxisfrom
+        mov ebx, eax
+        ;potencia 2
+        imul ebx  
+        ;lo multiplica por el coef
+        xor ebx, ebx
+        movsx ebx, funcOnMemD[1]
+        imul ebx
+        ;suma el producto
+        add ecx, eax
+
+        ;--------- x1
+        ;copia el valor de eax, a ebx
+        xor ebx, ebx
+        xor eax, eax
+        movsx eax, xAxisfrom
+        movsx ebx, funcOnMemD[2]
+        ;lo multiplica por el coef
+        imul ebx
+        ;suma el producto
+        add ecx, eax
+
+        ;especifica la fila en donde estará
+        ;mueve ecx a eax
+        mov eax, ecx
+        ;prepara la división con ratioGraph
+        xor ebx, ebx
+        mov ebx, ratioGraph
+        ;determina si es menor a 0
+        cmp eax, 0
+        jge _plotOFNoCarry
+            ;niega acx
+            neg eax
+            ;extiende el signo
+            xor edx, edx
+            cdq
+            ;divide dentro de ratioGraph
+            div ebx
+            ;al resultado (eax) le suma 99
+            add eax, 99
+            ;mueve el resultado a edx
+            xor edx, edx
+            mov edx, eax
+            ;se asegura que el resultado no sea
+            ;mayor a 199
+            cmp edx, 199
+            jg _plotOFIncFrom
+            jmp _plotOFPrintPixel
+        _plotOFNoCarry:
+            ;extiende el signo
+            xor edx, edx
+            cdq
+            ;divide dentro de ratio
+            div ebx
+            ;prepara la resta
+            xor ebx, ebx
+            mov ebx, 99
+            ;resta el contenido de eax a ebx (99 - y/ratioGraph)
+            sub ebx, eax
+            ;mueve el resultao a edx
+            xor edx, edx
+            mov edx, ebx
+            cmp edx, 0
+            ;si es menor a 0 no pinta pixel
+            jl _plotOFIncFrom
+        _plotOFPrintPixel: 
+            ;especifica la columna en donde
+            ;se deberá pintar
+            xor ecx, ecx
+            movsx ecx, xAxisfrom
+            sub ecx, 159
+            printPixelOn 
+            _plotOFIncFrom:
+                inc xAxisfrom
+                jmp _plotOFPlot
+    _plotOFEnd:
+        pauseAnyKeyVideo
+        textModeOn
+        ret
+plotOriginalD endp
 
 ;------------------------------------------------------------------
 genReport proc
