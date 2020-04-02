@@ -99,29 +99,29 @@ operInfo2           db 0b3h,"    $"
 operInfoSucc        db 0b3h," Resultado:$"
 ;------------------------------------------------------------------
 ; ENCABEZADO DE REPORTE
-reportHeader        db "UNIVERSIDAD DE SAN CARLOS DE GUATEMALA", 0ah
-                    db "FACULTAD DE INGENIERIA", 0ah
-                    db "ESCUELA DE CIENCIAS Y SISTEMAS", 0ah
-                    db "ARQUITECTURA DE COMPUTADORES Y ENSAMBLADORES 1 A", 0ah
-                    db "PRIMER SEMESTRE 2020", 0ah
-                    db "SERGIO FERNANDO OTZOY GONZALEZ", 0ah
-                    db "201602782", 0ah, 0ah
-                    db "REPORTE PRACTICA NO. 5",  0ah, 0ah
+reportHeader        db "<html><body align=", 022h, "center", 022h, ">UNIVERSIDAD DE SAN CARLOS DE GUATEMALA<br>"
+                    db "FACULTAD DE INGENIERIA<br>"
+                    db "ESCUELA DE CIENCIAS Y SISTEMAS<br>"
+                    db "ARQUITECTURA DE COMPUTADORES Y ENSAMBLADORES 1 A<br>"
+                    db "PRIMER SEMESTRE 2020<br>"
+                    db "SERGIO FERNANDO OTZOY GONZALEZ<br>"
+                    db "201602782<br><br>"
+                    db "REPORTE PRACTICA NO. 5<br><br>"
 reportDate          db "Fecha: "
-DATE                db "00/00/0000", 0ah
+DATE                db "00/00/0000", "<br>"
 reportTime          db "Hora: "
-TIME                db "00:00:00", 0ah, 0ah
-reportOriginal      db "Funci", 0f3h, "n original", 0ah
+TIME                db "00:00:00", "<br><br>"
+reportOriginal      db "Funci", 0f3h, "n original<br>"
                     db "f(x) = " 
-fxOriginal          db "                               ", 0ah, 0ah ;31 para limpiar
-reportDerivada      db "Funci", 0f3h, "n derivada", 0ah
+fxOriginal          db "                               ", "<br><br>" ;31 para limpiar
+reportDerivada      db "Funci", 0f3h, "n derivada<br>"
                     db "f'(x) = "
-fxDerivada          db "                                   ", 0ah, 0ah ;35 para limpiar
-reportIntegral      db "Funci", 0f3h, "n integral", 0ah
+fxDerivada          db "                                   ", "<br><br>" ;35 para limpiar
+reportIntegral      db "Funci", 0f3h, "n integral<br>"
                     db "F(x) = "
-fxIntegral          db "                                              $" ;46 para limpiar
+fxIntegral          db "                                              </html></body>$" ;46 para limpiar
 reportGenerMsg      db 0b3h, " Reporte generado:                                                           ", 0b3h, "$"
-reportName          db "p5RepA.txt", 00h,"                                                              " ,0b3h, "$" ;5 para reporte
+reportName          db "p5RepA.htm", 00h,"                                                              " ,0b3h, "$" ;5 para reporte
 buffer   DB 100 dup (?), '$'
 .code
 main proc
@@ -657,54 +657,75 @@ plotOriginalF proc
     videoModeOn
     setupScreen
     ;inicializa ax
+    xor bx, bx
     mov bx, xAxisfrom
     _plotOFPlot:
         xor ax, ax
         xor dx, dx
+        xor cx, cx
+        xor si, si
         cmp bx, xAxisto
         jg _plotOFEnd ;no es mayor a  
 
         ;inicia con la constante
-        mov dl, funcIsMem[4]
+        mov dl, funcOnMemf[4]
 
-        ;copia le valor de ax a bx
-        mov ax, bx
+        ;copia el valor de ax a bx
+        mov al, bl
         ;potencia 4
-        imul bx
-        imul bx
-        imul bx   
+        imul bl
+        imul bl
+        imul bl   
         ;lo multiplica por el coef
-        imul funcIsMem[0]
+        push bx
+        xor bx, bx
+        mov bl, funcOnMemf[0]
+        imul bl
+        pop bx
         ;almacena el resultado en dx
         add dx, ax
 
         ;copia el valor de bx a ax
-        mov ax, bx
+        xor ax, ax
+        mov al, bl
         ;potencia 3
-        imul bx
-        imul bx
+        imul bl
+        imul bl
         ;lo multiplica por el coef
-        imul funcIsMem[1]
+        push bx
+        xor bx, bx
+        mov bl, funcOnMemf[1]
+        imul bl
+        pop bx
         ;almacena el resultado en dx
         add dx, ax
 
         ;copia el valor de bx a ax
-        mov ax, bx
+        xor ax, ax
+        mov al, bl
         ;potencia 2
-        imul bx
+        imul bl
         ;lo multiplica por el coef
-        imul funcIsMem[2]
+        push bx
+        xor bx, bx
+        mov bl, funcOnMemf[2]
+        imul bl
+        pop bx
         ;almacena el resultado en dx
         add dx, ax
 
         ;copia el valor de ax a bx
-        mov ax, bx
+        xor ax, ax
+        mov al, bl
         ;lo multiplica por el coef
-        imul funcIsMem[3]
+        push bx
+        xor bx, bx
+        mov bl, funcOnMemf[3]
+        imul bl
+        pop bx
         ;almacena el resultado en dx
         add dx, ax
         
-        ;procede a pintar un pixel
         ;especifica la columna en dónde estará
         mov cx, bx
         add cx, 159 ;159
@@ -717,14 +738,14 @@ plotOriginalF proc
         ;se le suma 99
         add dx, 99
         ;verifica que no sea mayor a 199
-        cmp dx, 199
+        cmp dx, 00c7h
         ;es mayor a 199, no pinta ningún pixel
         ja _plotOFIncBx
         ;pintar pixel
         jmp _plotOFPrintPixel
         _plotPixelNoCarry:
-            ;vericia que no sea mayor a 99
-            cmp dx, 99
+            ;verifica que no sea mayor a 99
+            cmp dx, 063h
             ja _plotOFIncBx
             ;no es mayor a 99
             mov ax, 99

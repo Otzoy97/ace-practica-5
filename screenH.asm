@@ -32,18 +32,12 @@ pauseAnyKeyVideo macro
     pop ax
 endm
 
-printPixelOn macro; xAxis, yAxis
+printPixelOn macro
     push ax
     push bx
-    push cx
-    push dx
     mov ax, 0c0fh
     mov bx, 0000h
-    ;mov cx, xAxis
-    ;mov dx, yAxis
     int 10h
-    pop dx
-    pop cx
     pop bx
     pop ax
 endm
@@ -69,7 +63,7 @@ LOCAL _1, _2, _3
     xor ax, ax
     mov ax, 000ah   ; color verde claro
     mov cx, 200   ; 200 lineas
-    mov di, 159   ; empieza en 159
+    mov di, 158   ; empieza en 159
     _2:
         mov [di], ax
         add di, 320
