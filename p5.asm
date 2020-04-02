@@ -708,15 +708,33 @@ plotOriginalF proc
         ;especifica la columna en dónde estará
         mov cx, bx
         add cx, 159 ;159
-        ;especifica la fila en dónde estará 9fh ;159 
-        mov ax, 99 ;159 
-        sub ax, dx
-        mov dx, ax
-        printPixelOn 
-        ;push dx
-        ;inc cx
-        inc bx
-        jmp _plotOFPlot
+        ;determina si hay o no carry
+        rol dx, 01
+        ror dx, 01
+        jnc _plotPixelNoCarry
+        ;hay carry, primero ha que negarlo
+        neg dx
+        ;se le suma 99
+        add dx, 99
+        ;verifica que no sea mayor a 199
+        cmp dx, 199
+        ;es mayor a 199, no pinta ningún pixel
+        ja _plotOFIncBx
+        ;pintar pixel
+        jmp _plotOFPrintPixel
+        _plotPixelNoCarry:
+            ;vericia que no sea mayor a 99
+            cmp dx, 99
+            ja _plotOFIncBx
+            ;no es mayor a 99
+            mov ax, 99
+            sub ax, dx
+            mov dx, ax
+        _plotOFPrintPixel:        
+            printPixelOn 
+            _plotOFIncBx:
+                inc bx
+                jmp _plotOFPlot
     _plotOFEnd:
         pauseAnyKeyVideo
         textModeOn

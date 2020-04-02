@@ -68,8 +68,8 @@ LOCAL _1, _2, _3
     xor di, di
     xor ax, ax
     mov ax, 000ah   ; color verde claro
-    mov cx, 00c8h   ; 200 lineas
-    mov di, 009eh   ; empieza en 159
+    mov cx, 200   ; 200 lineas
+    mov di, 159   ; empieza en 159
     _2:
         mov [di], ax
         add di, 320
