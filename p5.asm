@@ -662,7 +662,11 @@ plotOriginalF proc
         xor ax, ax
         xor dx, dx
         cmp bx, xAxisto
-        jg _plotOFEnd ;no es mayor a      
+        jg _plotOFEnd ;no es mayor a  
+
+        ;inicia con la constante
+        mov dl, funcIsMem[4]
+
         ;copia le valor de ax a bx
         mov ax, bx
         ;potencia 4
@@ -699,24 +703,23 @@ plotOriginalF proc
         imul funcIsMem[3]
         ;almacena el resultado en dx
         add dx, ax
-
-        ;suma la constante
-        add dx, funcIsMem[4]
         
         ;procede a pintar un pixel
         ;especifica la columna en dónde estará
         mov cx, bx
-        add cx, 9fh ;159 
-        ;especifica la fila en dónde estará
-        mov ax, 63h ;99
+        add cx, 159 ;159
+        ;especifica la fila en dónde estará 9fh ;159 
+        mov ax, 99 ;159 
         sub ax, dx
         mov dx, ax
         printPixelOn 
         ;push dx
         ;inc cx
         inc bx
+        jmp _plotOFPlot
     _plotOFEnd:
         pauseAnyKeyVideo
+        textModeOn
         ret
 plotOriginalF endp
 
