@@ -523,7 +523,13 @@ showIntFunction proc
     ret
 showIntFunction endp
 
+;------------------------------------------------------------------
 menuPlotFunction proc
+; Despliega un menú para que el usuario eliga qué función 
+; graficar. Solicitará que ingrese el rango en el cuál se graficará
+; la función, se validará que el rango inferior sea menor al rango
+; superior. 
+;------------------------------------------------------------------
     push ax
     push bx
     push si
@@ -566,8 +572,8 @@ menuPlotFunction proc
         mov ax, xAxisto
         cmp xAxisfrom, ax
         jg _plotWrongRange
-        ;call  plotOriginalF
-        pauseAnyKey
+        call  plotOriginalF
+        ;pauseAnyKey
         jmp _mainMenuPlotFunction
     _plotDerivada:
         ;solicita al usuario el rango inferior
@@ -641,10 +647,78 @@ menuPlotFunction proc
 menuPlotFunction endp
 
 ;------------------------------------------------------------------
-plotOFunction proc
-   mov ax, xAxisfrom
+plotOriginalF proc
+; recupera el valor de x
+; se eleva a la n potencia
+; se multiplica con el coef de la función
+; se suma con el resultado previo
+;------------------------------------------------------------------
+    ;inicia el modo video
+    videoModeOn
+    setupScreen
+    ;inicializa ax
+    mov bx, xAxisfrom
+    _plotOFPlot:
+        xor ax, ax
+        xor dx, dx
+        cmp bx, xAxisto
+        jg _plotOFEnd ;no es mayor a      
+        ;copia le valor de ax a bx
+        mov ax, bx
+        ;potencia 4
+        imul bx
+        imul bx
+        imul bx   
+        ;lo multiplica por el coef
+        imul funcIsMem[0]
+        ;almacena el resultado en dx
+        add dx, ax
 
-plotOFunction endp
+        ;copia el valor de bx a ax
+        mov ax, bx
+        ;potencia 3
+        imul bx
+        imul bx
+        ;lo multiplica por el coef
+        imul funcIsMem[1]
+        ;almacena el resultado en dx
+        add dx, ax
+
+        ;copia el valor de bx a ax
+        mov ax, bx
+        ;potencia 2
+        imul bx
+        ;lo multiplica por el coef
+        imul funcIsMem[2]
+        ;almacena el resultado en dx
+        add dx, ax
+
+        ;copia el valor de ax a bx
+        mov ax, bx
+        ;lo multiplica por el coef
+        imul funcIsMem[3]
+        ;almacena el resultado en dx
+        add dx, ax
+
+        ;suma la constante
+        add dx, funcIsMem[4]
+        
+        ;procede a pintar un pixel
+        ;especifica la columna en dónde estará
+        mov cx, bx
+        add cx, 9fh ;159 
+        ;especifica la fila en dónde estará
+        mov ax, 63h ;99
+        sub ax, dx
+        mov dx, ax
+        printPixelOn 
+        ;push dx
+        ;inc cx
+        inc bx
+    _plotOFEnd:
+        pauseAnyKeyVideo
+        ret
+plotOriginalF endp
 
 ;------------------------------------------------------------------
 genReport proc

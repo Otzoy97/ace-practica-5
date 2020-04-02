@@ -32,6 +32,21 @@ pauseAnyKeyVideo macro
     pop ax
 endm
 
+printPixelOn macro; xAxis, yAxis
+    push ax
+    push bx
+    push cx
+    push dx
+    mov ax, 0c0fh
+    mov bx, 0000h
+    ;mov cx, xAxis
+    ;mov dx, yAxis
+    int 10h
+    pop dx
+    pop cx
+    pop bx
+    pop ax
+endm
 
 setupScreen macro
 LOCAL _1, _2, _3
@@ -67,6 +82,9 @@ LOCAL _1, _2, _3
         mov [di], ax
         inc di
         loop _3
+    ;restablece segmento de datos
+    mov ax, @data
+    mov ds, ax
     pop di
     pop bx
     pop cx
