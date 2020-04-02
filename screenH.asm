@@ -27,8 +27,8 @@ pauseAnyKeyVideo macro
     mov ah, 10h
     int 16h
     ;reestablece el segmento de datos
-    mov ax, @data
-    mov ds, ax
+    ;mov ax, @data
+    ;mov ds, ax
     pop ax
 endm
 

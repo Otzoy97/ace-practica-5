@@ -22,10 +22,12 @@ ENDM
 
 printChar MACRO char
     PUSH AX
+    push dx
     MOV AH, 02H
     XOR DX, DX
     MOV DL, char
     INT 21H
+    pop dx
     POP AX
 ENDM
 

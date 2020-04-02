@@ -83,11 +83,12 @@ graphto             db " Ingrese el valor final de intervalo: $"
 graphint            db " Ingrese el valor de la constante: $"
 graphWRange         db " El valor inicial debe ser menor que el valor final del intervalo$"
 xAxisfrom           dw 0
-aea1                db '$'
+;aea1                db '$'
 xAxisto             dw 0
-aea2                db '$'
+;aea2                db '$'
 cteInt              dw 0
-aea3                db '$'
+ratioGraph          dw 1
+;aea3                db '$'
 ;------------------------------------------------------------------
 ; CALCULADORA  
 postFixOper         db 66 dup(00h)
@@ -99,27 +100,27 @@ operInfo2           db 0b3h,"    $"
 operInfoSucc        db 0b3h," Resultado:$"
 ;------------------------------------------------------------------
 ; ENCABEZADO DE REPORTE
-reportHeader        db "<html><body align=", 022h, "center", 022h, ">UNIVERSIDAD DE SAN CARLOS DE GUATEMALA<br>"
+reportHeader        db "<html><body><h3 align=", 022h, "center", 022h, ">UNIVERSIDAD DE SAN CARLOS DE GUATEMALA<br>"
                     db "FACULTAD DE INGENIERIA<br>"
                     db "ESCUELA DE CIENCIAS Y SISTEMAS<br>"
                     db "ARQUITECTURA DE COMPUTADORES Y ENSAMBLADORES 1 A<br>"
-                    db "PRIMER SEMESTRE 2020<br>"
+                    db "PRIMER SEMESTRE 2020<br><br>"
                     db "SERGIO FERNANDO OTZOY GONZALEZ<br>"
                     db "201602782<br><br>"
-                    db "REPORTE PRACTICA NO. 5<br><br>"
+                    db "REPORTE PRACTICA NO. 5<br></h3><hr>"
 reportDate          db "Fecha: "
 DATE                db "00/00/0000", "<br>"
 reportTime          db "Hora: "
 TIME                db "00:00:00", "<br><br>"
 reportOriginal      db "Funci", 0f3h, "n original<br>"
-                    db "f(x) = " 
-fxOriginal          db "                               ", "<br><br>" ;31 para limpiar
-reportDerivada      db "Funci", 0f3h, "n derivada<br>"
-                    db "f'(x) = "
-fxDerivada          db "                                   ", "<br><br>" ;35 para limpiar
-reportIntegral      db "Funci", 0f3h, "n integral<br>"
-                    db "F(x) = "
-fxIntegral          db "                                              </html></body>$" ;46 para limpiar
+                    db "<p>f(x) = " 
+fxOriginal          db "                               ", "</p><br>" ;31 para limpiar
+reportDerivada      db "<p>Funci", 0f3h, "n derivada</p>"
+                    db "<p>f'(x) = "
+fxDerivada          db "                                   ", "</p><br>" ;35 para limpiar
+reportIntegral      db "<p>Funci", 0f3h, "n integrada</p>"
+                    db "<p>F(x) = "
+fxIntegral          db "                                              </p></html></body>$" ;46 para limpiar
 reportGenerMsg      db 0b3h, " Reporte generado:                                                           ", 0b3h, "$"
 reportName          db "p5RepA.htm", 00h,"                                                              " ,0b3h, "$" ;5 para reporte
 buffer   DB 100 dup (?), '$'
@@ -572,7 +573,8 @@ menuPlotFunction proc
         mov ax, xAxisto
         cmp xAxisfrom, ax
         jg _plotWrongRange
-        call  plotOriginalF
+        call setRatioOF
+        call plotOriginalF
         ;pauseAnyKey
         jmp _mainMenuPlotFunction
     _plotDerivada:
@@ -644,7 +646,142 @@ menuPlotFunction proc
     pop si
     pop bx
     pop ax
+    ret
 menuPlotFunction endp
+
+;------------------------------------------------------------------
+setRatioOF proc
+; Obtiene los puntos de los límites de la función dados por 
+; xAxisfrom y xAxisto, determina cual es más grande,
+; divide el mayor entre 200, el resultado es la escala a tomar 
+; para graficar
+;------------------------------------------------------------------
+    ;----------x0
+    xor dh, dh
+    mov dl, funcOnMemf[4]
+    ;----------x4
+    ;copia el valor de al a bl
+    xor bx, bx
+    xor ax, ax
+    mov bx, xAxisfrom
+    mov al, bl
+    ;potencia 4
+    imul bl
+    imul bl
+    imul bl   
+    ;lo multiplica por el coef
+    imul funcOnMemf[0]
+    ;almacena el resultado en dx
+    add dx, ax
+    ;----------x3
+    ;copia el valor de bx a ax
+    xor ax, ax
+    mov al, bl
+    ;potencia 3
+    imul bl
+    imul bl
+    ;lo multiplica por el coef
+    imul funcOnMemf[1]
+    ;almacena el resultado en dx
+    add dx, ax
+    ;----------x2
+    ;copia el valor de bx a ax
+    xor ax, ax
+    mov al, bl
+    ;potencia 2
+    imul bl
+    ;lo multiplica por el coef
+    imul funcOnMemf[2]
+    ;almacena el resultado en dx
+    add dx, ax
+    ;----------x1
+    ;copia el valor de ax a bx
+    xor ax, ax
+    mov al, bl
+    ;lo multiplica por el coef
+    imul funcOnMemf[3]
+    ;almacena el resultado en dx
+    add dx, ax
+    
+    push dx
+
+    xor dx, dx
+
+    ;CON AXIS TO
+
+    ;----------x0
+    mov dl, funcOnMemf[4]
+    ;----------x4
+    ;copia el valor de al a bl
+    xor bx, bx
+    xor ax, ax
+    mov bx, xAxisto
+    mov al, bl
+    ;potencia 4
+    imul bl
+    imul bl
+    imul bl   
+    ;lo multiplica por el coef
+    imul funcOnMemf[0]
+    ;almacena el resultado en dx
+    add dx, ax
+    ;----------x3
+    ;copia el valor de bx a ax
+    xor ax, ax
+    mov al, bl
+    ;potencia 3
+    imul bl
+    imul bl
+    ;lo multiplica por el coef
+    imul funcOnMemf[1]
+    ;almacena el resultado en dx
+    add dx, ax
+    ;----------x2
+    ;copia el valor de bx a ax
+    xor ax, ax
+    mov al, bl
+    ;potencia 2
+    imul bl
+    ;lo multiplica por el coef
+    imul funcOnMemf[2]
+    ;almacena el resultado en dx
+    add dx, ax
+    ;----------x1
+    ;copia el valor de ax a bx
+    xor ax, ax
+    mov al, bl
+    ;lo multiplica por el coef
+    imul funcOnMemf[3]
+    ;almacena el resultado en dx
+    add dx, ax ;(xAxisto)
+
+    ;recupera su valor absoluto
+    cmp dx, 00h
+    jge _RatioNoCarry
+        neg dx
+    _RatioNoCarry:
+        mov cx, dx
+    pop ax ;recupera el valor anterior (xAxisfrom)
+    cmp ax, 00h
+    jge _RatioNoCarry1
+        neg ax
+    _RatioNoCarry1:
+    xor dx, dx ;limpia datos
+    cmp ax, cx
+    jge _setRatio
+        mov ax, cx
+    _setRatio:
+        xor bx, bx
+        mov bx, 100
+        cwd ;extiende el signo a dx
+        div bx
+        .if (ax == 0)
+            mov ratioGraph, 01
+        .else
+            mov ratioGraph, ax ;almacena el radio
+        .endif
+    ret
+setRatioOF endp
 
 ;------------------------------------------------------------------
 plotOriginalF proc
@@ -654,22 +791,19 @@ plotOriginalF proc
 ; se suma con el resultado previo
 ;------------------------------------------------------------------
     ;inicia el modo video
-    videoModeOn
-    setupScreen
-    ;inicializa ax
-    xor bx, bx
-    mov bx, xAxisfrom
+    ;videoModeOn
+    ;setupScreen
     _plotOFPlot:
         xor ax, ax
         xor dx, dx
         xor cx, cx
-        xor si, si
+        xor bx, bx
+        mov bx, xAxisfrom
         cmp bx, xAxisto
         jg _plotOFEnd ;no es mayor a  
 
         ;inicia con la constante
         mov dl, funcOnMemf[4]
-
         ;copia el valor de ax a bx
         mov al, bl
         ;potencia 4
@@ -677,14 +811,9 @@ plotOriginalF proc
         imul bl
         imul bl   
         ;lo multiplica por el coef
-        push bx
-        xor bx, bx
-        mov bl, funcOnMemf[0]
-        imul bl
-        pop bx
+        imul funcOnMemf[0]
         ;almacena el resultado en dx
         add dx, ax
-
         ;copia el valor de bx a ax
         xor ax, ax
         mov al, bl
@@ -692,73 +821,74 @@ plotOriginalF proc
         imul bl
         imul bl
         ;lo multiplica por el coef
-        push bx
-        xor bx, bx
-        mov bl, funcOnMemf[1]
-        imul bl
-        pop bx
+        imul funcOnMemf[1]
         ;almacena el resultado en dx
         add dx, ax
-
         ;copia el valor de bx a ax
         xor ax, ax
         mov al, bl
         ;potencia 2
         imul bl
         ;lo multiplica por el coef
-        push bx
-        xor bx, bx
-        mov bl, funcOnMemf[2]
-        imul bl
-        pop bx
+        imul funcOnMemf[2]
         ;almacena el resultado en dx
         add dx, ax
-
         ;copia el valor de ax a bx
         xor ax, ax
         mov al, bl
         ;lo multiplica por el coef
-        push bx
-        xor bx, bx
-        mov bl, funcOnMemf[3]
-        imul bl
-        pop bx
+        imul funcOnMemf[3]
         ;almacena el resultado en dx
         add dx, ax
-        
-        ;especifica la columna en dónde estará
+        ;especifica la columna en donde estará
         mov cx, bx
         add cx, 159 ;159
         ;determina si hay o no carry
-        rol dx, 01
-        ror dx, 01
-        jnc _plotPixelNoCarry
+            xor ax, ax
+            mov ax, dx
+            xor dx, dx
+            cmp ax, 00h
+            jl _plotPixelNoCarry
         ;hay carry, primero ha que negarlo
-        neg dx
+            neg ax
+        ;extiende el signo a dx            
+            cwd 
+            printChar '6'
+            div ratioGraph
+            
         ;se le suma 99
-        add dx, 99
-        ;verifica que no sea mayor a 199
-        cmp dx, 00c7h
-        ;es mayor a 199, no pinta ningún pixel
-        ja _plotOFIncBx
-        ;pintar pixel
+            add ax, 0063h
+        ;determina si es mayor a 200
+            cmp ax, 199
+            jg _plotOFIncBx
+        ;mueve el valor de ax, a dx
+            mov dx, ax
         jmp _plotOFPrintPixel
         _plotPixelNoCarry:
-            ;verifica que no sea mayor a 99
-            cmp dx, 063h
-            ja _plotOFIncBx
-            ;no es mayor a 99
-            mov ax, 99
-            sub ax, dx
-            mov dx, ax
-        _plotOFPrintPixel:        
-            printPixelOn 
+            ;almacena el valor actual de bx
+            ;    push bx
+            ;limpia bx 
+            ;    xor bx, bx
+            ;    mov bx, 99
+            ;extiende el signo a dx y divide
+            ;    cwd 
+            ;    div ratioGraph
+            ;el resultado se resta a bx
+            ;    sub bx, ax
+            ;    mov dx, bx
+            ;    pop bx
+            ;si es menor a cero no se pinta
+            ;    cmp dx, 0
+            ;    jl _plotOFIncBx 
+        _plotOFPrintPixel: 
+            ;printPixelOn 
             _plotOFIncBx:
-                inc bx
+                printChar 'a'
+                inc xAxisfrom
                 jmp _plotOFPlot
     _plotOFEnd:
-        pauseAnyKeyVideo
-        textModeOn
+        ;pauseAnyKeyVideo
+        ;textModeOn
         ret
 plotOriginalF endp
 
