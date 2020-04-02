@@ -63,7 +63,6 @@ funcIsDev           db 0b3h, " Derivada de la funci", 0a2h ,"n:$"
 funcIsInt           db 0b3h, " Integral de la funci", 0a2h ,"n:$"
 funcOnMemf          db 5 dup(00h)
 funcOnMemd          db 5 dup(00h)
-funcIntCte          db ?
 funcThereIsF        db 0
 funcOriginal        db " f(x) = $"
 funcDerivada        db " f'(x) = $"
@@ -990,7 +989,7 @@ setRatioIF proc
 ; para graficar
 ;------------------------------------------------------------------
     ;----------x0
-    movsx ecx, funcIntCte
+    movsx ecx, cteInt
 
     ;----------x5
     ;copia el valor de al a bl
@@ -1106,7 +1105,7 @@ setRatioIF proc
     xor ecx, ecx
 
     ;----------x0
-    movsx ecx, funcIntCte
+    movsx ecx, cteInt
 
     ;----------x5
     ;copia el valor de al a bl
@@ -1571,7 +1570,7 @@ plotOriginalI proc
         jg _plotOFEndI
 
         ;mueve la constante
-        movsx ecx, funcIntCte
+        movsx ecx, cteInt
 
         ;----------x5
         ;copia xaxisfrom a ebx
