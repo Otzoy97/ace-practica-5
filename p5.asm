@@ -1373,9 +1373,12 @@ plotOriginalF proc
             div ebx
             ;al resultado (eax) le suma 99
             add eax, 99
+            ;mueve el resultado a edx
+            xor edx, edx
+            mov edx, eax
             ;se asegura que el resultado no sea
             ;mayor a 199
-            cmp eax, 199
+            cmp edx, 199
             jg _plotOFIncFrom
             jmp _plotOFPrintPixel
         _plotOFNoCarry:
@@ -1389,10 +1392,18 @@ plotOriginalF proc
             mov ebx, 99
             ;resta el contenido de eax a ebx (99 - y/ratioGraph)
             sub ebx, eax
-            cmp ebx, 0
+            ;mueve el resultao a edx
+            xor edx, edx
+            mov edx, ebx
+            cmp edx, 0
             ;si es menor a 0 no pinta pixel
             jl _plotOFIncFrom
         _plotOFPrintPixel: 
+            ;especifica la columna en donde
+            ;se deberá pintar
+            xor ecx, ecx
+            mov ecx, xAxisfrom
+            sub ecx, 159
             printPixelOn 
             _plotOFIncFrom:
                 inc xAxisfrom
