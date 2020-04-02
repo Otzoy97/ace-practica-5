@@ -631,6 +631,7 @@ menuPlotFunction proc
         mov ax, xAxisto
         cmp xAxisfrom, ax
         jge _plotWrongRange
+        call setRatioIF
         ;call  plotOriginalF
         pauseAnyKey
         jmp _mainMenuPlotFunction
@@ -1071,7 +1072,7 @@ setRatioIF proc
     ;----------x2
     ;copia el valor de ax a bx
     xor eax, eax
-    xor edx, dx
+    xor edx, edx
     xor ebx, ebx
     movsx eax, xAxisfrom
     mov ebx, eax
@@ -1094,7 +1095,7 @@ setRatioIF proc
     ;----------x1
     ;copia el valor de ax a bx
     xor eax, eax
-    xor edx, dx
+    xor edx, edx
     xor ebx, ebx
     movsx eax, xAxisfrom
     movsx ebx, funcOnMemf[4]
@@ -1187,7 +1188,7 @@ setRatioIF proc
     ;----------x2
     ;copia el valor de ax a bx
     xor eax, eax
-    xor edx, dx
+    xor edx, edx
     xor ebx, ebx
     movsx eax, xAxisto
     mov ebx, eax
@@ -1210,7 +1211,7 @@ setRatioIF proc
     ;----------x1
     ;copia el valor de ax a bx
     xor eax, eax
-    xor edx, dx
+    xor edx, edx
     xor ebx, ebx
     movsx eax, xAxisto
     movsx ebx, funcOnMemf[4]
